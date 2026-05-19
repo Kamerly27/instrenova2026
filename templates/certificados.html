@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>Certificados</title>
+
+<style>
+
+body{
+    font-family:Arial;
+    background:#edf2f7;
+    padding:40px;
+}
+
+h1{
+    color:#071739;
+    margin-bottom:30px;
+}
+
+.card{
+    background:white;
+    padding:25px;
+    border-radius:20px;
+    margin-bottom:20px;
+    box-shadow:0 0 10px rgba(0,0,0,0.1);
+}
+
+a{
+    display:inline-block;
+    margin-top:15px;
+    background:#2563eb;
+    color:white;
+    text-decoration:none;
+    padding:12px 18px;
+    border-radius:12px;
+}
+
+a:hover{
+    background:#1746a2;
+}
+
+</style>
+
+</head>
+
+<body>
+
+<h1>🏆 Certificados Estudiantes</h1>
+
+{% for estudiante in estudiantes %}
+
+<div class="card">
+
+<h2>{{ estudiante[1] }}</h2>
+
+<p><b>Documento:</b> {{ estudiante[2] }}</p>
+
+<p><b>Curso:</b> {{ estudiante[4] }}</p>
+
+<a href="#">
+Descargar Certificado
+</a>
+
+</div>
+
+{% endfor %}
+
+</body>
+
+</html>

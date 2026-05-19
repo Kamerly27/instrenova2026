@@ -1,0 +1,547 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>Panel Docente</title>
+
+<style>
+
+*{
+margin:0;
+padding:0;
+box-sizing:border-box;
+}
+
+body{
+font-family:Arial;
+background:#eef2f7;
+}
+
+/* SIDEBAR */
+
+.sidebar{
+position:fixed;
+left:0;
+top:0;
+width:280px;
+height:100vh;
+background:#071739;
+padding:25px;
+overflow-y:auto;
+}
+
+.logo{
+width:120px;
+display:block;
+margin:auto;
+border-radius:20px;
+}
+
+.sidebar h1{
+color:white;
+text-align:center;
+margin-top:20px;
+margin-bottom:35px;
+}
+
+.sidebar a{
+display:block;
+text-decoration:none;
+color:white;
+background:#12326b;
+padding:18px;
+border-radius:15px;
+margin-bottom:15px;
+transition:0.3s;
+}
+
+.sidebar a:hover{
+background:#2563eb;
+transform:translateX(5px);
+}
+
+/* MAIN */
+
+.main{
+margin-left:300px;
+padding:30px;
+}
+
+.banner{
+background:linear-gradient(90deg,#071739,#2563eb);
+color:white;
+padding:45px;
+border-radius:30px;
+margin-bottom:35px;
+}
+
+.grid{
+display:grid;
+grid-template-columns:repeat(auto-fit,minmax(250px,1fr));
+gap:20px;
+margin-bottom:30px;
+}
+
+.card{
+background:white;
+padding:25px;
+border-radius:20px;
+box-shadow:0 0 15px rgba(0,0,0,0.08);
+margin-bottom:25px;
+}
+
+.card h3{
+margin-bottom:15px;
+}
+
+input,
+textarea,
+select{
+width:100%;
+padding:14px;
+margin-top:12px;
+border-radius:12px;
+border:1px solid #ccc;
+font-size:15px;
+}
+
+button{
+margin-top:15px;
+background:#2563eb;
+color:white;
+border:none;
+padding:14px 20px;
+border-radius:12px;
+cursor:pointer;
+font-size:15px;
+}
+
+button:hover{
+background:#1746b3;
+}
+
+.modulo{
+background:white;
+padding:25px;
+border-radius:20px;
+margin-bottom:25px;
+box-shadow:0 0 10px rgba(0,0,0,0.06);
+}
+
+.archivo{
+background:#f8fafc;
+padding:18px;
+border-radius:15px;
+margin-top:15px;
+}
+
+.btn{
+display:inline-block;
+padding:10px 15px;
+background:#2563eb;
+color:white;
+border-radius:10px;
+text-decoration:none;
+margin-top:10px;
+}
+
+.btn-danger{
+background:#dc2626;
+}
+
+.tabla{
+width:100%;
+border-collapse:collapse;
+margin-top:20px;
+}
+
+.tabla th{
+background:#071739;
+color:white;
+padding:14px;
+text-align:left;
+}
+
+.tabla td{
+padding:14px;
+border-bottom:1px solid #ddd;
+background:white;
+}
+
+</style>
+
+</head>
+
+<body>
+
+<!-- SIDEBAR -->
+
+<div class="sidebar">
+
+<img
+src="{{ url_for('static', filename='img/logorenova.png') }}"
+class="logo">
+
+<h1>DOCENTE</h1>
+
+<a href="#estadisticas">📊 Estadísticas</a>
+
+<a href="#modulos">📚 Módulos</a>
+
+<a href="#contenidos">📁 Contenidos</a>
+
+<a href="#notas">📘 Notas</a>
+
+<a href="#entregas">📤 Entregas</a>
+
+<a href="#estudiantes">👨‍🎓 Estudiantes</a>
+
+<a href="/logout">🚪 Cerrar sesión</a>
+
+</div>
+
+<!-- MAIN -->
+
+<div class="main">
+
+<!-- BANNER -->
+
+<div class="banner">
+
+<h2>Bienvenido {{ docente['nombre'] }}</h2>
+
+<p style="margin-top:10px;">
+Curso:
+<b>{{ docente['curso_nombre'] }}</b>
+</p>
+
+</div>
+
+<!-- ESTADISTICAS -->
+
+<div class="grid" id="estadisticas">
+
+<div class="card">
+<h3>👨‍🎓 Estudiantes</h3>
+<h1>{{ estudiantes|length }}</h1>
+</div>
+
+<div class="card">
+<h3>📚 Módulos</h3>
+<h1>{{ modulos|length }}</h1>
+</div>
+
+<div class="card">
+<h3>📁 Contenidos</h3>
+<h1>{{ contenidos|length }}</h1>
+</div>
+
+</div>
+
+<!-- CREAR MODULO -->
+
+<div class="card">
+
+<h2>📚 Crear módulo</h2>
+
+<form method="POST" action="/crear_modulo">
+
+<input
+type="text"
+name="titulo"
+placeholder="Título del módulo"
+required>
+
+<textarea
+name="descripcion"
+placeholder="Descripción del módulo"
+required></textarea>
+
+<button type="submit">
+Crear módulo
+</button>
+
+</form>
+
+</div>
+
+<!-- MODULOS -->
+
+<div id="modulos">
+
+{% for modulo in modulos %}
+
+<div class="modulo">
+
+<h2>{{ modulo['titulo'] }}</h2>
+
+<p style="margin-top:10px;">
+{{ modulo['descripcion'] }}
+</p>
+
+<!-- SUBIR ARCHIVO -->
+
+<div class="card" style="margin-top:25px;">
+
+<h3>📁 Subir contenido</h3>
+
+<form
+method="POST"
+action="/subir_archivo/{{ modulo['id'] }}"
+enctype="multipart/form-data">
+
+<input
+type="text"
+name="titulo"
+placeholder="Título del contenido"
+required>
+
+<select name="tipo">
+
+<option value="PDF">PDF</option>
+
+<option value="Video">Video</option>
+
+<option value="Guía">Guía</option>
+
+<option value="Taller">Taller</option>
+
+</select>
+
+<input
+type="file"
+name="archivo"
+required>
+
+<button type="submit">
+Subir archivo
+</button>
+
+</form>
+
+</div>
+
+<!-- ARCHIVOS -->
+
+{% for contenido in contenidos %}
+
+{% if contenido['modulo_id'] == modulo['id'] %}
+
+<div class="archivo">
+
+<h3>{{ contenido['titulo'] }}</h3>
+
+<p>
+Tipo:
+<b>{{ contenido['tipo'] }}</b>
+</p>
+
+<a
+href="/uploads/{{ contenido['url'] }}"
+target="_blank"
+class="btn">
+
+Abrir
+
+</a>
+
+</div>
+
+{% endif %}
+
+{% endfor %}
+
+</div>
+
+{% endfor %}
+
+</div>
+
+<!-- REGISTRAR NOTAS -->
+
+<div class="card" id="notas">
+
+<h2>📘 Registrar Notas</h2>
+
+<form method="POST" action="/guardar_nota">
+
+<select name="estudiante_id" required>
+
+<option value="">
+Seleccione estudiante
+</option>
+
+{% for estudiante in estudiantes %}
+
+<option value="{{ estudiante['id'] }}">
+
+{{ estudiante['nombre'] }}
+
+</option>
+
+{% endfor %}
+
+</select>
+
+<input
+type="text"
+name="materia"
+placeholder="Materia"
+required>
+
+<input
+type="number"
+step="0.1"
+min="0"
+max="5"
+name="nota"
+placeholder="Nota"
+required>
+
+<button type="submit">
+Guardar nota
+</button>
+
+</form>
+
+</div>
+
+<!-- TABLA NOTAS -->
+
+<div class="card">
+
+<h2>📋 Notas Registradas</h2>
+
+{% if notas %}
+
+<table class="tabla">
+
+<tr>
+<th>Estudiante</th>
+<th>Materia</th>
+<th>Nota</th>
+</tr>
+
+{% for nota in notas %}
+
+<tr>
+
+<td>{{ nota['estudiante_nombre'] }}</td>
+
+<td>{{ nota['materia'] }}</td>
+
+<td>{{ nota['nota'] }}</td>
+
+</tr>
+
+{% endfor %}
+
+</table>
+
+{% else %}
+
+<p>No hay notas registradas.</p>
+
+{% endif %}
+
+</div>
+
+<!-- ENTREGAS -->
+
+<div class="card" id="entregas">
+
+<h2>📤 Trabajos Subidos por Estudiantes</h2>
+
+{% if entregas %}
+
+<table class="tabla">
+
+<tr>
+<th>Estudiante</th>
+<th>Módulo</th>
+<th>Archivo</th>
+<th>Fecha</th>
+</tr>
+
+{% for entrega in entregas %}
+
+<tr>
+
+<td>
+{{ entrega['estudiante_nombre'] }}
+</td>
+
+<td>
+{{ entrega['modulo_nombre'] }}
+</td>
+
+<td>
+
+<a
+href="/uploads/{{ entrega['archivo'] }}"
+target="_blank"
+class="btn">
+
+Ver PDF
+
+</a>
+
+</td>
+
+<td>
+{{ entrega['fecha'] }}
+</td>
+
+</tr>
+
+{% endfor %}
+
+</table>
+
+{% else %}
+
+<p>No hay entregas todavía.</p>
+
+{% endif %}
+
+</div>
+
+<!-- ESTUDIANTES -->
+
+<div class="card" id="estudiantes">
+
+<h2>👨‍🎓 Estudiantes del curso</h2>
+
+<table class="tabla">
+
+<tr>
+<th>Nombre</th>
+<th>Correo</th>
+<th>Documento</th>
+</tr>
+
+{% for estudiante in estudiantes %}
+
+<tr>
+
+<td>{{ estudiante['nombre'] }}</td>
+
+<td>{{ estudiante['correo'] }}</td>
+
+<td>{{ estudiante['documento'] }}</td>
+
+</tr>
+
+{% endfor %}
+
+</table>
+
+</div>
+
+</div>
+
+</body>
+</html>

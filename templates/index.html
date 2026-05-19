@@ -1,0 +1,17 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Gestión de Trabajos</title>
+</head>
+<body>
+    <h1>Lista de Trabajos</h1>
+    <a href="{{ url_for('subir_trabajo') }}">Subir Nuevo Trabajo</a>
+    <ul>
+        {% for trabajo in trabajos %}
+            <li>
+                <a href="{{ url_for('ver_trabajo', trabajo_id=trabajo.id) }}">{{ trabajo.nombre_trabajo }}</a>
+            </li>
+        {% endfor %}
+    </ul>
+</body>
+</html>

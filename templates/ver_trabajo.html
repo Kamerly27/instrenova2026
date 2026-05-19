@@ -1,0 +1,15 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Detalles del Trabajo</title>
+</head>
+<body>
+    <h1>{{ trabajo.nombre_trabajo }}</h1>
+    <p><strong>Descripción:</strong> {{ trabajo.descripcion }}</p>
+    <p><strong>Nombre del Archivo:</strong> {{ trabajo.nombre_archivo }}</p>
+    <p><strong>Ruta del Archivo:</strong> {{ trabajo.ruta_archivo }}</p>
+
+    <a href="{{ url_for('descargar_archivo', trabajo_id=trabajo.id) }}">Descargar Archivo</a><br>
+    <a href="{{ url_for('index') }}">Volver a la lista</a>
+</body>
+</html>

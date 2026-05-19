@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Subir Trabajo</title>
+</head>
+<body>
+    <h1>Subir Nuevo Trabajo</h1>
+    <form method="post" enctype="multipart/form-data">
+        <label for="nombre_trabajo">Nombre del Trabajo:</label><br>
+        <input type="text" id="nombre_trabajo" name="nombre_trabajo"><br><br>
+
+        <label for="descripcion">Descripción:</label><br>
+        <textarea id="descripcion" name="descripcion"></textarea><br><br>
+
+        <label for="archivo">Archivo:</label><br>
+        <input type="file" id="archivo" name="archivo"><br><br>
+
+        <input type="submit" value="Subir Trabajo">
+    </form>
+    <br>
+    <a href="{{ url_for('index') }}">Volver a la lista</a>
+</body>
+</html>

@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <title>Examen Online</title>
+
+    <link rel="stylesheet"
+          href="{{ url_for('static', filename='css/style.css') }}">
+
+</head>
+
+<body class="fondo">
+
+<div class="contenido">
+
+    <div class="panel">
+
+        <h1>{{ examen[1] }}</h1>
+
+        <form action="/resolver_examen/{{ examen[0] }}"
+              method="POST">
+
+            {% for pregunta in preguntas %}
+
+            <div class="pregunta-box">
+
+                <h3>{{ pregunta[1] }}</h3>
+
+                <br>
+
+                <label class="respuesta">
+
+                    <input type="radio"
+                           name="pregunta_{{ pregunta[0] }}"
+                           value="{{ pregunta[2] }}">
+
+                    {{ pregunta[2] }}
+
+                </label>
+
+                <br><br>
+
+                <label class="respuesta">
+
+                    <input type="radio"
+                           name="pregunta_{{ pregunta[0] }}"
+                           value="{{ pregunta[3] }}">
+
+                    {{ pregunta[3] }}
+
+                </label>
+
+                <br><br>
+
+                <label class="respuesta">
+
+                    <input type="radio"
+                           name="pregunta_{{ pregunta[0] }}"
+                           value="{{ pregunta[4] }}">
+
+                    {{ pregunta[4] }}
+
+                </label>
+
+                <br><br>
+
+                <label class="respuesta">
+
+                    <input type="radio"
+                           name="pregunta_{{ pregunta[0] }}"
+                           value="{{ pregunta[5] }}">
+
+                    {{ pregunta[5] }}
+
+                </label>
+
+            </div>
+
+            {% endfor %}
+
+            <button type="submit"
+                    class="boton">
+
+                Enviar Examen
+
+            </button>
+
+        </form>
+
+    </div>
+
+</div>
+
+</body>
+</html>

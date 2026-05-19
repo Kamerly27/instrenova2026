@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+
+<meta charset="UTF-8">
+
+<title>Mis Cursos</title>
+
+<style>
+
+body{
+    font-family:Arial;
+    background:#eef2f7;
+    padding:40px;
+}
+
+h1{
+    color:#071c4d;
+    margin-bottom:30px;
+}
+
+.card{
+    background:white;
+    padding:25px;
+    border-radius:20px;
+    margin-bottom:20px;
+    box-shadow:0 4px 12px rgba(0,0,0,0.1);
+}
+
+</style>
+
+</head>
+
+<body>
+
+<h1>📚 Mis Cursos</h1>
+
+{% for curso in cursos %}
+
+<div class="card">
+
+<h2>{{ curso[1] }}</h2>
+
+</div>
+
+{% endfor %}
+
+</body>
+
+</html>

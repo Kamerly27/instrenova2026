@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+
+<meta charset="UTF-8">
+
+<title>Mis Notas</title>
+
+<style>
+
+body{
+    font-family:Arial;
+    background:#eef2f7;
+    padding:40px;
+}
+
+h1{
+    color:#071c4d;
+    margin-bottom:30px;
+}
+
+table{
+    width:100%;
+    border-collapse:collapse;
+    background:white;
+}
+
+th{
+    background:#071c4d;
+    color:white;
+    padding:15px;
+}
+
+td{
+    border:1px solid #ddd;
+    padding:15px;
+}
+
+</style>
+
+</head>
+
+<body>
+
+<h1>📊 Mis Notas</h1>
+
+<table>
+
+<tr>
+
+<th>Módulo</th>
+<th>Nota</th>
+<th>Observación</th>
+
+</tr>
+
+{% for nota in notas %}
+
+<tr>
+
+<td>{{ nota[1] }}</td>
+<td>{{ nota[2] }}</td>
+<td>{{ nota[3] }}</td>
+
+</tr>
+
+{% endfor %}
+
+</table>
+
+</body>
+
+</html>
