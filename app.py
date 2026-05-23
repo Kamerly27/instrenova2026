@@ -20,7 +20,7 @@ os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 # BASE DE DATOS
 # =========================
 def init_db():
-    conn = sqlite3.connect("database.db")
+conn = sqlite3.connect("renova.db")
     cursor = conn.cursor()
 
     # CURSOS
