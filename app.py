@@ -1,5 +1,5 @@
 from flask import Flask, render_template, request, redirect, session, send_from_directory, make_response
-import sqlite3
+import psycopg2
 import os
 from werkzeug.utils import secure_filename
 from datetime import datetime
@@ -20,7 +20,7 @@ os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 # BASE DE DATOS
 # =========================
 def init_db():
-conn = sqlite3.connect("renova.db")
+    conn = psycopg2.connect(os.environ.get("DATABASE_URL"))
     cursor = conn.cursor()
 
     # CURSOS
@@ -131,9 +131,8 @@ def login():
 def admin():
     if "admin" not in session:
         return redirect("/login")
-    conn = sqlite3.connect("database.db")
-    conn.row_factory = sqlite3.Row
-    cursor = conn.cursor()
+    conn = psycopg2.connect(os.environ.get("DATABASE_URL"))
+        cursor = conn.cursor()
     cursos = cursor.execute("SELECT * FROM cursos ORDER BY id DESC").fetchall()
     docentes = cursor.execute("""
         SELECT docentes.id,
@@ -164,7 +163,7 @@ def admin():
 # =========================
 @app.route("/crear_curso", methods=["POST"])
 def crear_curso():
-    conn = sqlite3.connect("database.db")
+   conn = psycopg2.connect(os.environ.get("DATABASE_URL"))
     cursor = conn.cursor()
     cursor.execute("INSERT INTO cursos(nombre) VALUES(?)", (request.form["nombre"],))
     conn.commit()
@@ -176,7 +175,7 @@ def crear_curso():
 # =========================
 @app.route("/crear_docente", methods=["POST"])
 def crear_docente():
-    conn = sqlite3.connect("database.db")
+    conn = psycopg2.connect(os.environ.get("DATABASE_URL"))
     cursor = conn.cursor()
     cursor.execute("INSERT INTO docentes (nombre, correo, password, curso_id) VALUES (?, ?, ?, ?)",
                    (request.form["nombre"], request.form["correo"], request.form["password"], request.form["curso_id"]))
@@ -189,7 +188,7 @@ def crear_docente():
 # =========================
 @app.route("/crear_estudiante", methods=["POST"])
 def crear_estudiante():
-    conn = sqlite3.connect("database.db")
+    conn = psycopg2.connect(os.environ.get("DATABASE_URL"))
     cursor = conn.cursor()
     cursor.execute("INSERT INTO estudiantes (nombre, documento, correo, password, curso_id) VALUES (?, ?, ?, ?, ?)",
                    (request.form["nombre"], request.form["documento"], request.form["correo"], request.form["password"], request.form["curso_id"]))
@@ -206,9 +205,8 @@ def docente_login():
     if request.method == "POST":
         correo = request.form["correo"]
         password = request.form["password"]
-        conn = sqlite3.connect("database.db")
-        conn.row_factory = sqlite3.Row
-        cursor = conn.cursor()
+        conn = psycopg2.connect(os.environ.get("DATABASE_URL"))
+                cursor = conn.cursor()
         docente = cursor.execute("SELECT * FROM docentes WHERE correo=? AND password=?", (correo, password)).fetchone()
         conn.close()
         if docente:
@@ -227,8 +225,7 @@ def estudiante_login():
     if request.method == "POST":
         correo = request.form["correo"]
         password = request.form["password"]
-        conn = sqlite3.connect("database.db")
-        conn.row_factory = sqlite3.Row
+        conn = psycopg2.connect(os.environ.get("DATABASE_URL"))
         cursor = conn.cursor()
         estudiante = cursor.execute("SELECT * FROM estudiantes WHERE correo=? AND password=?", (correo, password)).fetchone()
         conn.close()
@@ -246,8 +243,7 @@ def estudiante_login():
 def panel_docente():
     if "docente_id" not in session:
         return redirect("/docente_login")
-    conn = sqlite3.connect("database.db")
-    conn.row_factory = sqlite3.Row
+    conn = psycopg2.connect(os.environ.get("DATABASE_URL"))
     cursor = conn.cursor()
     docente_id = session["docente_id"]
     docente = cursor.execute("""
@@ -291,8 +287,7 @@ def panel_docente():
 def panel_estudiante():
     if "estudiante_id" not in session:
         return redirect("/estudiante_login")
-    conn = sqlite3.connect("database.db")
-    conn.row_factory = sqlite3.Row
+    conn = psycopg2.connect(os.environ.get("DATABASE_URL"))
     cursor = conn.cursor()
     estudiante_id = session["estudiante_id"]
     estudiante = cursor.execute("""
@@ -301,7 +296,7 @@ def panel_estudiante():
         FROM estudiantes
         LEFT JOIN cursos
         ON estudiantes.curso_id = cursos.id
-        WHERE estudiantes.id=?
+        WHERE estudiantes.id=%s
     """, (estudiante_id,)).fetchone()
     modulos = cursor.execute("""
         SELECT modulos.*
@@ -341,7 +336,7 @@ def panel_estudiante():
 def crear_modulo():
     titulo = request.form["titulo"]
     descripcion = request.form["descripcion"]
-    conn = sqlite3.connect("database.db")
+    conn = psycopg2.connect(os.environ.get("DATABASE_URL"))
     cursor = conn.cursor()
     cursor.execute("INSERT INTO modulos (titulo, descripcion, docente_id) VALUES (?, ?, ?)",
                    (titulo, descripcion, session["docente_id"]))
@@ -360,7 +355,7 @@ def subir_archivo(modulo_id):
     nombre_archivo = secure_filename(archivo.filename)
     ruta_guardado = os.path.join(app.config["UPLOAD_FOLDER"], nombre_archivo)
     archivo.save(ruta_guardado)
-    conn = sqlite3.connect("database.db")
+    conn = psycopg2.connect(os.environ.get("DATABASE_URL"))
     cursor = conn.cursor()
     cursor.execute("INSERT INTO contenidos (titulo, tipo, url, modulo_id) VALUES (?, ?, ?, ?)",
                    (titulo, tipo, nombre_archivo, modulo_id))
@@ -383,7 +378,7 @@ def subir_tarea(modulo_id):
     nombre_archivo = secure_filename(archivo.filename)
     ruta = os.path.join(app.config["UPLOAD_FOLDER"], nombre_archivo)
     archivo.save(ruta)
-    conn = sqlite3.connect("database.db")
+   conn = psycopg2.connect(os.environ.get("DATABASE_URL"))
     cursor = conn.cursor()
     cursor.execute("INSERT INTO entregas (estudiante_id, modulo_id, archivo, fecha) VALUES (?, ?, ?, ?)",
                    (session["estudiante_id"], modulo_id, nombre_archivo, datetime.now().strftime("%d/%m/%Y")))
@@ -403,7 +398,7 @@ def guardar_nota():
     materia = request.form["materia"]
     nota = request.form["nota"]
 
-    conn = sqlite3.connect("database.db")
+    conn = psycopg2.connect(os.environ.get("DATABASE_URL"))
     cursor = conn.cursor()
     cursor.execute("INSERT INTO notas (estudiante_id, materia, nota) VALUES (?, ?, ?)",
                    (estudiante_id, materia, nota))
@@ -432,8 +427,7 @@ def logout():
 @app.route("/certificado/<int:estudiante_id>")
 def certificado(estudiante_id):
 
-    conn = sqlite3.connect("database.db")
-    conn.row_factory = sqlite3.Row
+    conn = psycopg2.connect(os.environ.get("DATABASE_URL"))
     cursor = conn.cursor()
 
     estudiante = cursor.execute(
