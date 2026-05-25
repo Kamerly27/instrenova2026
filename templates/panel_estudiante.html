@@ -1,5 +1,6 @@
 @app.route("/panel_estudiante")
 def panel_estudiante():
+
     if "estudiante_id" not in session:
         return redirect("/estudiante_login")
 
@@ -9,22 +10,37 @@ def panel_estudiante():
     cursor = None
 
     try:
-        conn = psycopg2.connect(os.environ.get("DATABASE_URL"))
+
+        DATABASE_URL = os.environ.get("DATABASE_URL")
+
+        if not DATABASE_URL:
+            print("DATABASE_URL no encontrada")
+            return "Error de configuración BD", 500
+
+        conn = psycopg2.connect(DATABASE_URL)
         cursor = conn.cursor()
 
         # =========================
         # ESTUDIANTE
         # =========================
+
         cursor.execute("""
-            SELECT e.id, e.nombre, e.documento, e.correo, c.nombre, e.curso_id
+            SELECT
+                e.id,
+                e.nombre,
+                e.documento,
+                e.correo,
+                c.nombre,
+                e.curso_id
             FROM estudiantes e
-            LEFT JOIN cursos c ON e.curso_id = c.id
+            LEFT JOIN cursos c
+                ON e.curso_id = c.id
             WHERE e.id = %s
         """, (estudiante_id,))
 
         estudiante = cursor.fetchone()
 
-        if not estudiante:
+        if estudiante is None:
             return "Estudiante no encontrado.", 404
 
         estudiante_dict = {
@@ -39,71 +55,129 @@ def panel_estudiante():
         curso_id = estudiante[5]
 
         # =========================
-        # MÓDULOS
+        # MODULOS
         # =========================
+
+        modulos = []
+
         if curso_id:
+
             cursor.execute("""
-                SELECT id, titulo, descripcion
+                SELECT
+                    id,
+                    titulo,
+                    descripcion
                 FROM modulos
                 WHERE docente_id IN (
-                    SELECT id FROM docentes WHERE curso_id = %s
+
+                    SELECT id
+                    FROM docentes
+                    WHERE curso_id = %s
+
                 )
                 ORDER BY id DESC
             """, (curso_id,))
-            modulos = cursor.fetchall()
-        else:
-            modulos = []
 
-        modulos_list = [
-            {"id": m[0], "titulo": m[1], "descripcion": m[2]}
-            for m in modulos
-        ]
+            resultado = cursor.fetchall()
+
+            if resultado:
+                modulos = resultado
+
+        modulos_list = []
+
+        for m in modulos:
+
+            modulos_list.append({
+
+                "id": m[0],
+                "titulo": m[1],
+                "descripcion": m[2]
+
+            })
 
         # =========================
-        # CONTENIDOS (SIN IN PELIGROSO)
+        # CONTENIDOS
         # =========================
+
         contenidos_list = []
 
         if modulos:
-            modulo_ids = tuple([m[0] for m in modulos])
+
+            modulo_ids = [m[0] for m in modulos]
 
             cursor.execute("""
-                SELECT id, titulo, tipo, url, modulo_id
+                SELECT
+                    id,
+                    titulo,
+                    tipo,
+                    url,
+                    modulo_id
                 FROM contenidos
                 WHERE modulo_id = ANY(%s)
                 ORDER BY id DESC
-            """, (list(modulo_ids),))
+            """, (modulo_ids,))
 
             contenidos = cursor.fetchall()
 
-            contenidos_list = [
-                {"id": c[0], "titulo": c[1], "tipo": c[2], "url": c[3], "modulo_id": c[4]}
-                for c in contenidos
-            ]
+            if contenidos:
+
+                for c in contenidos:
+
+                    contenidos_list.append({
+
+                        "id": c[0],
+                        "titulo": c[1],
+                        "tipo": c[2],
+                        "url": c[3],
+                        "modulo_id": c[4]
+
+                    })
 
         # =========================
         # ENTREGAS
         # =========================
+
         cursor.execute("""
-            SELECT e.id, e.modulo_id, e.archivo, e.fecha, m.titulo
+            SELECT
+                e.id,
+                e.modulo_id,
+                e.archivo,
+                e.fecha,
+                m.titulo
             FROM entregas e
-            JOIN modulos m ON e.modulo_id = m.id
+            JOIN modulos m
+                ON e.modulo_id = m.id
             WHERE e.estudiante_id = %s
             ORDER BY e.id DESC
         """, (estudiante_id,))
 
         entregas = cursor.fetchall()
 
-        entregas_list = [
-            {"id": e[0], "modulo_id": e[1], "archivo": e[2], "fecha": e[3], "modulo_nombre": e[4]}
-            for e in entregas
-        ]
+        entregas_list = []
+
+        if entregas:
+
+            for e in entregas:
+
+                entregas_list.append({
+
+                    "id": e[0],
+                    "modulo_id": e[1],
+                    "archivo": e[2],
+                    "fecha": e[3],
+                    "modulo_nombre": e[4]
+
+                })
 
         # =========================
         # NOTAS
         # =========================
+
         cursor.execute("""
-            SELECT id, materia, nota
+            SELECT
+                id,
+                materia,
+                nota
             FROM notas
             WHERE estudiante_id = %s
             ORDER BY id DESC
@@ -111,28 +185,49 @@ def panel_estudiante():
 
         notas = cursor.fetchall()
 
-        notas_list = [
-            {"id": n[0], "materia": n[1], "nota": n[2]}
-            for n in notas
-        ]
+        notas_list = []
+
+        if notas:
+
+            for n in notas:
+
+                notas_list.append({
+
+                    "id": n[0],
+                    "materia": n[1],
+                    "nota": n[2]
+
+                })
 
         # =========================
         # RENDER
         # =========================
+
         return render_template(
+
             "panel_estudiante.html",
+
             estudiante=estudiante_dict,
             modulos=modulos_list,
             contenidos=contenidos_list,
             entregas=entregas_list,
             notas=notas_list
+
         )
 
     except Exception as e:
+
         print("ERROR PANEL ESTUDIANTE:", str(e))
-        return "Error al cargar el panel del estudiante."
+
+        import traceback
+        traceback.print_exc()
+
+        return "Error al cargar el panel del estudiante.", 500
 
     finally:
-        if conn:
+
+        if cursor:
             cursor.close()
+
+        if conn:
             conn.close()
