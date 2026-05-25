@@ -1,247 +1,138 @@
-<!DOCTYPE html>
-<html lang="es">
-<head>
-    <meta charset="UTF-8">
-    <title>Campus Estudiantil</title>
+@app.route("/panel_estudiante")
+def panel_estudiante():
+    if "estudiante_id" not in session:
+        return redirect("/estudiante_login")
 
-    <style>
-        *{
-            margin:0;
-            padding:0;
-            box-sizing:border-box;
-            font-family:Arial;
+    estudiante_id = session["estudiante_id"]
+
+    conn = None
+    cursor = None
+
+    try:
+        conn = psycopg2.connect(os.environ.get("DATABASE_URL"))
+        cursor = conn.cursor()
+
+        # =========================
+        # ESTUDIANTE
+        # =========================
+        cursor.execute("""
+            SELECT e.id, e.nombre, e.documento, e.correo, c.nombre, e.curso_id
+            FROM estudiantes e
+            LEFT JOIN cursos c ON e.curso_id = c.id
+            WHERE e.id = %s
+        """, (estudiante_id,))
+
+        estudiante = cursor.fetchone()
+
+        if not estudiante:
+            return "Estudiante no encontrado.", 404
+
+        estudiante_dict = {
+            "id": estudiante[0],
+            "nombre": estudiante[1],
+            "documento": estudiante[2],
+            "correo": estudiante[3],
+            "curso_nombre": estudiante[4],
+            "curso_id": estudiante[5]
         }
 
-        body{
-            background:#eef2f7;
-            display:flex;
-        }
-
-        .sidebar{
-            width:250px;
-            background:#031b4e;
-            min-height:100vh;
-            padding:20px;
-            color:white;
-        }
-
-        .logo{
-            width:110px;
-            height:110px;
-            border-radius:20px;
-            display:block;
-            margin:auto;
-            margin-bottom:20px;
-        }
-
-        .sidebar h1{
-            text-align:center;
-            margin-bottom:30px;
-        }
-
-        .menu a{
-            display:block;
-            padding:15px;
-            background:#163b85;
-            color:white;
-            text-decoration:none;
-            border-radius:14px;
-            margin-bottom:14px;
-        }
-
-        .contenido{
-            flex:1;
-            padding:35px;
-        }
-
-        .header{
-            background:linear-gradient(90deg,#061b52,#3267ff);
-            color:white;
-            padding:40px;
-            border-radius:30px;
-            margin-bottom:30px;
-        }
-
-        .card{
-            background:white;
-            padding:25px;
-            border-radius:25px;
-            margin-bottom:25px;
-            box-shadow:0 4px 10px rgba(0,0,0,.05);
-        }
-
-        .modulo{
-            border:1px solid #ddd;
-            padding:20px;
-            border-radius:20px;
-            margin-top:20px;
-        }
-
-        .btn{
-            display:inline-block;
-            background:#3267ff;
-            color:white;
-            padding:12px 20px;
-            border-radius:12px;
-            text-decoration:none;
-            margin-top:10px;
-        }
-
-        .nota{
-            background:#f4f7ff;
-            padding:18px;
-            border-radius:15px;
-            margin-top:15px;
-            border-left:6px solid #3267ff;
-        }
-    </style>
-</head>
-
-<body>
-
-    <div class="sidebar">
-
-        <img src="/static/logo.png" class="logo">
-
-        <h1>ESTUDIANTE</h1>
-
-        <div class="menu">
-            <a href="#">📚 Mi Curso</a>
-            <a href="#">📖 Módulos</a>
-            <a href="#">📤 Mis Trabajos</a>
-            <a href="#">📘 Mis Notas</a>
-            <a href="/logout">🚪 Cerrar sesión</a>
-        </div>
-
-    </div>
-
-    <div class="contenido">
-
-        <div class="header">
-
-            <h1>
-                Hola {{ estudiante.nombre or "Estudiante" }}
-            </h1>
-
-            <br>
-
-            <p>
-                Bienvenido al campus virtual Renova
-            </p>
-
-        </div>
-
-        <div class="card">
-
-            <h2>📑 Información del estudiante</h2>
-
-            <br>
-
-            <p><strong>Documento:</strong> {{ estudiante.documento or "-" }}</p>
-            <br>
-            <p><strong>Correo:</strong> {{ estudiante.correo or "-" }}</p>
-            <br>
-            <p><strong>Curso:</strong> {{ estudiante.curso_nombre or "Sin asignar" }}</p>
-
-        </div>
-
-        <div class="card">
-
-            <h2>📚 Módulos del curso</h2>
-
-            {% if modulos %}
-                {% for modulo in modulos %}
-
-                <div class="modulo">
-
-                    <h3>{{ modulo.titulo }}</h3>
-                    <br>
-                    <p>{{ modulo.descripcion }}</p>
-
-                    <br>
-
-                    {% for contenido in contenidos %}
-                        {% if contenido.modulo_id == modulo.id %}
-
-                        <div class="modulo">
-
-                            <strong>{{ contenido.titulo }}</strong>
-
-                            <br><br>
-
-                            Tipo: {{ contenido.tipo }}
-
-                            <br>
-
-                            <a href="/uploads/{{ contenido.url }}" target="_blank" class="btn">
-                                Abrir archivo
-                            </a>
-
-                        </div>
-
-                        {% endif %}
-                    {% endfor %}
-
-                    <br>
-
-                    <form action="/subir_tarea/{{ modulo.id }}" method="POST" enctype="multipart/form-data">
-
-                        <input type="file" name="archivo" required>
-                        <br><br>
-
-                        <button class="btn">Subir trabajo PDF</button>
-
-                    </form>
-
-                </div>
-
-                {% endfor %}
-            {% else %}
-                <p>No tienes módulos asignados aún.</p>
-            {% endif %}
-
-        </div>
-
-        <div class="card">
-
-            <h2>📘 Mis Notas</h2>
-
-            {% if notas and notas|length > 0 %}
-
-                {% for nota in notas %}
-
-                <div class="nota">
-
-                    <strong>{{ nota.materia or "Materia" }}</strong>
-
-                    <br><br>
-
-                    Nota obtenida:
-                    <strong>{{ nota.nota or "0" }}</strong>
-
-                </div>
-
-                {% endfor %}
-
-            {% else %}
-                <p>No tienes notas registradas.</p>
-            {% endif %}
-
-        </div>
-
-        <div class="card">
-
-            <h2>🎓 Certificado</h2>
-
-            <br>
-
-            <a href="/certificado/{{ estudiante.id }}" class="btn">
-                Descargar certificado PDF
-            </a>
-
-        </div>
-
-    </div>
-
-</body>
-</html>
+        curso_id = estudiante[5]
+
+        # =========================
+        # MÓDULOS
+        # =========================
+        if curso_id:
+            cursor.execute("""
+                SELECT id, titulo, descripcion
+                FROM modulos
+                WHERE docente_id IN (
+                    SELECT id FROM docentes WHERE curso_id = %s
+                )
+                ORDER BY id DESC
+            """, (curso_id,))
+            modulos = cursor.fetchall()
+        else:
+            modulos = []
+
+        modulos_list = [
+            {"id": m[0], "titulo": m[1], "descripcion": m[2]}
+            for m in modulos
+        ]
+
+        # =========================
+        # CONTENIDOS (SIN IN PELIGROSO)
+        # =========================
+        contenidos_list = []
+
+        if modulos:
+            modulo_ids = tuple([m[0] for m in modulos])
+
+            cursor.execute("""
+                SELECT id, titulo, tipo, url, modulo_id
+                FROM contenidos
+                WHERE modulo_id = ANY(%s)
+                ORDER BY id DESC
+            """, (list(modulo_ids),))
+
+            contenidos = cursor.fetchall()
+
+            contenidos_list = [
+                {"id": c[0], "titulo": c[1], "tipo": c[2], "url": c[3], "modulo_id": c[4]}
+                for c in contenidos
+            ]
+
+        # =========================
+        # ENTREGAS
+        # =========================
+        cursor.execute("""
+            SELECT e.id, e.modulo_id, e.archivo, e.fecha, m.titulo
+            FROM entregas e
+            JOIN modulos m ON e.modulo_id = m.id
+            WHERE e.estudiante_id = %s
+            ORDER BY e.id DESC
+        """, (estudiante_id,))
+
+        entregas = cursor.fetchall()
+
+        entregas_list = [
+            {"id": e[0], "modulo_id": e[1], "archivo": e[2], "fecha": e[3], "modulo_nombre": e[4]}
+            for e in entregas
+        ]
+
+        # =========================
+        # NOTAS
+        # =========================
+        cursor.execute("""
+            SELECT id, materia, nota
+            FROM notas
+            WHERE estudiante_id = %s
+            ORDER BY id DESC
+        """, (estudiante_id,))
+
+        notas = cursor.fetchall()
+
+        notas_list = [
+            {"id": n[0], "materia": n[1], "nota": n[2]}
+            for n in notas
+        ]
+
+        # =========================
+        # RENDER
+        # =========================
+        return render_template(
+            "panel_estudiante.html",
+            estudiante=estudiante_dict,
+            modulos=modulos_list,
+            contenidos=contenidos_list,
+            entregas=entregas_list,
+            notas=notas_list
+        )
+
+    except Exception as e:
+        print("ERROR PANEL ESTUDIANTE:", str(e))
+        return "Error al cargar el panel del estudiante."
+
+    finally:
+        if conn:
+            cursor.close()
+            conn.close()
