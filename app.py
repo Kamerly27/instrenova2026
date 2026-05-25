@@ -504,6 +504,7 @@ def panel_docente():
 # =========================
 @app.route("/panel_estudiante")
 def panel_estudiante():
+
     if "estudiante_id" not in session:
         return redirect("/estudiante_login")
 
