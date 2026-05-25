@@ -100,7 +100,7 @@ init_db()
 def login():
     error = ""
     if request.method == "POST":
-        if request.form["usuario"] == "adminrenova" and request.form["password"] == "1234":
+        if request.form["usuario"] == "adminrenova" and request.form["password"] == "Renova2026!Panel$84"::
             session["admin"] = True
             return redirect("/admin")
         error = "Incorrecto"
@@ -177,6 +177,118 @@ def estudiante_login():
         "estudiante_login.html",
         error=error
     )
+# =========================
+# LOGIN DOCENTE
+# =========================
+@app.route("/docente_login", methods=["GET", "POST"])
+def docente_login():
+
+    error = ""
+
+    if request.method == "POST":
+
+        correo = request.form["correo"]
+        password = request.form["password"]
+
+        conn = psycopg2.connect(
+            os.environ.get("DATABASE_URL")
+        )
+
+        cursor = conn.cursor()
+
+        cursor.execute("""
+
+            SELECT id,nombre
+            FROM docentes
+            WHERE correo=%s
+            AND password=%s
+
+        """,(correo,password))
+
+        docente = cursor.fetchone()
+
+        cursor.close()
+        conn.close()
+
+        if docente:
+
+            session["docente_id"] = docente[0]
+            session["docente_nombre"] = docente[1]
+
+            return redirect("/panel_docente")
+
+        error="Correo o contraseña incorrectos"
+
+    return render_template(
+        "docente_login.html",
+        error=error
+    )
+
+
+# =========================
+# LOGIN DOCENTE
+# =========================
+@app.route("/docente_login", methods=["GET", "POST"])
+def docente_login():
+
+    error = ""
+
+    if request.method == "POST":
+
+        correo = request.form["correo"]
+        password = request.form["password"]
+
+        conn = psycopg2.connect(
+            os.environ.get("DATABASE_URL")
+        )
+
+        cursor = conn.cursor()
+
+        cursor.execute("""
+
+            SELECT
+                id,
+                nombre
+
+            FROM docentes
+
+            WHERE correo=%s
+            AND password=%s
+
+        """, (correo, password))
+
+        docente = cursor.fetchone()
+
+        cursor.close()
+        conn.close()
+
+        if docente:
+
+            session["docente_id"] = docente[0]
+
+            return redirect(
+                "/panel_docente"
+            )
+
+        error = "Correo o contraseña incorrectos"
+
+    return render_template(
+        "docente_login.html",
+        error=error
+    )
+# =========================
+# PANEL DOCENTE
+# =========================
+@app.route("/panel_docente")
+def panel_docente():
+
+    if "docente_id" not in session:
+
+        return redirect("/docente_login")
+
+    return render_template(
+        "panel_docente.html"
+    ) 
 # =========================
 # PANEL ESTUDIANTE
 # =========================
