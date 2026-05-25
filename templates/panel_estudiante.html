@@ -1,233 +1,194 @@
-@app.route("/panel_estudiante")
-def panel_estudiante():
+<!DOCTYPE html>
+<html lang="es">
 
-    if "estudiante_id" not in session:
-        return redirect("/estudiante_login")
+<head>
 
-    estudiante_id = session["estudiante_id"]
+<meta charset="UTF-8">
 
-    conn = None
-    cursor = None
+<meta name="viewport"
+content="width=device-width,initial-scale=1">
 
-    try:
+<title>Panel Estudiante</title>
 
-        DATABASE_URL = os.environ.get("DATABASE_URL")
+<style>
 
-        if not DATABASE_URL:
-            print("DATABASE_URL no encontrada")
-            return "Error de configuración BD", 500
+body{
 
-        conn = psycopg2.connect(DATABASE_URL)
-        cursor = conn.cursor()
+font-family:Arial,sans-serif;
+background:#eef3f8;
+margin:0;
+padding:0;
 
-        # =========================
-        # ESTUDIANTE
-        # =========================
+}
 
-        cursor.execute("""
-            SELECT
-                e.id,
-                e.nombre,
-                e.documento,
-                e.correo,
-                c.nombre,
-                e.curso_id
-            FROM estudiantes e
-            LEFT JOIN cursos c
-                ON e.curso_id = c.id
-            WHERE e.id = %s
-        """, (estudiante_id,))
+header{
 
-        estudiante = cursor.fetchone()
+background:#1e3a5f;
+color:white;
+padding:20px;
+text-align:center;
 
-        if estudiante is None:
-            return "Estudiante no encontrado.", 404
+}
 
-        estudiante_dict = {
-            "id": estudiante[0],
-            "nombre": estudiante[1],
-            "documento": estudiante[2],
-            "correo": estudiante[3],
-            "curso_nombre": estudiante[4],
-            "curso_id": estudiante[5]
-        }
+.contenedor{
 
-        curso_id = estudiante[5]
+width:90%;
+max-width:1100px;
+margin:25px auto;
 
-        # =========================
-        # MODULOS
-        # =========================
+}
 
-        modulos = []
+.tarjeta{
 
-        if curso_id:
+background:white;
+padding:20px;
+border-radius:12px;
+box-shadow:0 2px 8px rgba(0,0,0,.12);
+margin-bottom:20px;
 
-            cursor.execute("""
-                SELECT
-                    id,
-                    titulo,
-                    descripcion
-                FROM modulos
-                WHERE docente_id IN (
+}
 
-                    SELECT id
-                    FROM docentes
-                    WHERE curso_id = %s
+h2{
 
-                )
-                ORDER BY id DESC
-            """, (curso_id,))
+color:#1e3a5f;
 
-            resultado = cursor.fetchall()
+}
 
-            if resultado:
-                modulos = resultado
+table{
 
-        modulos_list = []
+width:100%;
+border-collapse:collapse;
 
-        for m in modulos:
+}
 
-            modulos_list.append({
+th{
 
-                "id": m[0],
-                "titulo": m[1],
-                "descripcion": m[2]
+background:#1e3a5f;
+color:white;
 
-            })
+}
 
-        # =========================
-        # CONTENIDOS
-        # =========================
+td,th{
 
-        contenidos_list = []
+padding:10px;
+border:1px solid #ddd;
+text-align:left;
 
-        if modulos:
+}
 
-            modulo_ids = [m[0] for m in modulos]
+a{
 
-            cursor.execute("""
-                SELECT
-                    id,
-                    titulo,
-                    tipo,
-                    url,
-                    modulo_id
-                FROM contenidos
-                WHERE modulo_id = ANY(%s)
-                ORDER BY id DESC
-            """, (modulo_ids,))
+color:#1e3a5f;
 
-            contenidos = cursor.fetchall()
+}
 
-            if contenidos:
+.logout{
 
-                for c in contenidos:
+display:inline-block;
+background:#c62828;
+color:white;
+padding:10px 18px;
+text-decoration:none;
+border-radius:8px;
 
-                    contenidos_list.append({
+}
 
-                        "id": c[0],
-                        "titulo": c[1],
-                        "tipo": c[2],
-                        "url": c[3],
-                        "modulo_id": c[4]
+</style>
 
-                    })
+</head>
 
-        # =========================
-        # ENTREGAS
-        # =========================
+<body>
 
-        cursor.execute("""
-            SELECT
-                e.id,
-                e.modulo_id,
-                e.archivo,
-                e.fecha,
-                m.titulo
-            FROM entregas e
-            JOIN modulos m
-                ON e.modulo_id = m.id
-            WHERE e.estudiante_id = %s
-            ORDER BY e.id DESC
-        """, (estudiante_id,))
+<header>
 
-        entregas = cursor.fetchall()
+<h1>Panel del Estudiante</h1>
 
-        entregas_list = []
+</header>
 
-        if entregas:
+<div class="contenedor">
 
-            for e in entregas:
+<div class="tarjeta">
 
-                entregas_list.append({
+<h2>Información estudiante</h2>
 
-                    "id": e[0],
-                    "modulo_id": e[1],
-                    "archivo": e[2],
-                    "fecha": e[3],
-                    "modulo_nombre": e[4]
+<p><strong>Nombre:</strong>
+{{ estudiante.nombre }}</p>
 
-                })
+<p><strong>Documento:</strong>
+{{ estudiante.documento }}</p>
 
-        # =========================
-        # NOTAS
-        # =========================
+<p><strong>Correo:</strong>
+{{ estudiante.correo }}</p>
 
-        cursor.execute("""
-            SELECT
-                id,
-                materia,
-                nota
-            FROM notas
-            WHERE estudiante_id = %s
-            ORDER BY id DESC
-        """, (estudiante_id,))
+<p><strong>Curso:</strong>
+{{ estudiante.curso_nombre }}</p>
 
-        notas = cursor.fetchall()
+</div>
 
-        notas_list = []
+<div class="tarjeta">
 
-        if notas:
+<h2>Notas</h2>
 
-            for n in notas:
+<table>
 
-                notas_list.append({
+<tr>
 
-                    "id": n[0],
-                    "materia": n[1],
-                    "nota": n[2]
+<th>Materia</th>
+<th>Nota</th>
 
-                })
+</tr>
 
-        # =========================
-        # RENDER
-        # =========================
+{% for nota in notas %}
 
-        return render_template(
+<tr>
 
-            "panel_estudiante.html",
+<td>{{ nota.materia }}</td>
+<td>{{ nota.nota }}</td>
 
-            estudiante=estudiante_dict,
-            modulos=modulos_list,
-            contenidos=contenidos_list,
-            entregas=entregas_list,
-            notas=notas_list
+</tr>
 
-        )
+{% endfor %}
 
-    except Exception as e:
+</table>
 
-        print("ERROR PANEL ESTUDIANTE:", str(e))
+</div>
 
-        import traceback
-        traceback.print_exc()
+<div class="tarjeta">
 
-        return "Error al cargar el panel del estudiante.", 500
+<h2>Módulos</h2>
 
-    finally:
+{% for m in modulos %}
 
-        if cursor:
-            cursor.close()
+<p>
 
-        if conn:
-            conn.close()
+<strong>{{m.titulo}}</strong>
+
+<br>
+
+{{m.descripcion}}
+
+</p>
+
+<hr>
+
+{% endfor %}
+
+</div>
+
+<div class="tarjeta">
+
+<a
+class="logout"
+href="/logout">
+
+Cerrar sesión
+
+</a>
+
+</div>
+
+</div>
+
+</body>
+
+</html>
