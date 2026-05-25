@@ -507,7 +507,10 @@ def panel_estudiante():
     if "estudiante_id" not in session:
         return redirect("/estudiante_login")
 
-    estudiante_id = session["estudiante_id"]
+    estudiante_id = session.get("estudiante_id")
+
+if not estudiante_id:
+    return redirect("/estudiante_login")
     conn = None
     cursor = None
     try:
