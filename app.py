@@ -135,6 +135,49 @@ def admin():
                            estudiantes=estudiantes)
 
 # =========================
+# LOGIN ESTUDIANTE
+# =========================
+@app.route("/estudiante_login", methods=["GET", "POST"])
+def estudiante_login():
+
+    error = ""
+
+    if request.method == "POST":
+
+        correo = request.form["correo"]
+        password = request.form["password"]
+
+        conn = psycopg2.connect(
+            os.environ.get("DATABASE_URL")
+        )
+
+        cursor = conn.cursor()
+
+        cursor.execute("""
+            SELECT id
+            FROM estudiantes
+            WHERE correo=%s
+            AND password=%s
+        """, (correo, password))
+
+        estudiante = cursor.fetchone()
+
+        cursor.close()
+        conn.close()
+
+        if estudiante:
+
+            session["estudiante_id"] = estudiante[0]
+
+            return redirect("/panel_estudiante")
+
+        error = "Correo o contraseña incorrectos"
+
+    return render_template(
+        "estudiante_login.html",
+        error=error
+    )
+# =========================
 # PANEL ESTUDIANTE
 # =========================
 @app.route("/panel_estudiante")
