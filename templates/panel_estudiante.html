@@ -1,12 +1,10 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-
     <meta charset="UTF-8">
     <title>Campus Estudiantil</title>
 
     <style>
-
         *{
             margin:0;
             padding:0;
@@ -96,9 +94,7 @@
             margin-top:15px;
             border-left:6px solid #3267ff;
         }
-
     </style>
-
 </head>
 
 <body>
@@ -110,13 +106,11 @@
         <h1>ESTUDIANTE</h1>
 
         <div class="menu">
-
             <a href="#">📚 Mi Curso</a>
             <a href="#">📖 Módulos</a>
             <a href="#">📤 Mis Trabajos</a>
             <a href="#">📘 Mis Notas</a>
             <a href="/logout">🚪 Cerrar sesión</a>
-
         </div>
 
     </div>
@@ -126,7 +120,7 @@
         <div class="header">
 
             <h1>
-                Hola {{ estudiante.nombre }}
+                Hola {{ estudiante.nombre or "Estudiante" }}
             </h1>
 
             <br>
@@ -143,24 +137,11 @@
 
             <br>
 
-            <p>
-                <strong>Documento:</strong>
-                {{ estudiante.documento }}
-            </p>
-
+            <p><strong>Documento:</strong> {{ estudiante.documento or "-" }}</p>
             <br>
-
-            <p>
-                <strong>Correo:</strong>
-                {{ estudiante.correo }}
-            </p>
-
+            <p><strong>Correo:</strong> {{ estudiante.correo or "-" }}</p>
             <br>
-
-            <p>
-                <strong>Curso:</strong>
-                {{ estudiante.curso_nombre }}
-            </p>
+            <p><strong>Curso:</strong> {{ estudiante.curso_nombre or "Sin asignar" }}</p>
 
         </div>
 
@@ -168,72 +149,56 @@
 
             <h2>📚 Módulos del curso</h2>
 
-            {% for modulo in modulos %}
+            {% if modulos %}
+                {% for modulo in modulos %}
 
-            <div class="modulo">
+                <div class="modulo">
 
-                <h3>{{ modulo.titulo }}</h3>
+                    <h3>{{ modulo.titulo }}</h3>
+                    <br>
+                    <p>{{ modulo.descripcion }}</p>
 
-                <br>
+                    <br>
 
-                <p>{{ modulo.descripcion }}</p>
+                    {% for contenido in contenidos %}
+                        {% if contenido.modulo_id == modulo.id %}
 
-                <br>
+                        <div class="modulo">
 
-                {% for contenido in contenidos %}
+                            <strong>{{ contenido.titulo }}</strong>
 
-                    {% if contenido.modulo_id == modulo.id %}
+                            <br><br>
 
-                    <div class="modulo">
+                            Tipo: {{ contenido.tipo }}
 
-                        <strong>{{ contenido.titulo }}</strong>
+                            <br>
 
+                            <a href="/uploads/{{ contenido.url }}" target="_blank" class="btn">
+                                Abrir archivo
+                            </a>
+
+                        </div>
+
+                        {% endif %}
+                    {% endfor %}
+
+                    <br>
+
+                    <form action="/subir_tarea/{{ modulo.id }}" method="POST" enctype="multipart/form-data">
+
+                        <input type="file" name="archivo" required>
                         <br><br>
 
-                        Tipo:
-                        {{ contenido.tipo }}
+                        <button class="btn">Subir trabajo PDF</button>
 
-                        <br>
+                    </form>
 
-                        <a
-                            href="/uploads/{{ contenido.url }}"
-                            target="_blank"
-                            class="btn"
-                        >
-                            Abrir archivo
-                        </a>
-
-                    </div>
-
-                    {% endif %}
+                </div>
 
                 {% endfor %}
-
-                <br>
-
-                <form
-                    action="/subir_tarea/{{ modulo.id }}"
-                    method="POST"
-                    enctype="multipart/form-data"
-                >
-
-                    <input
-                        type="file"
-                        name="archivo"
-                        required
-                    >
-
-                    <br><br>
-
-                    <button class="btn">
-                        Subir trabajo PDF
-                    </button>
-
-                </form>
-
-            </div>
-
-            {% endfor %}
+            {% else %}
+                <p>No tienes módulos asignados aún.</p>
+            {% endif %}
 
         </div>
 
@@ -241,29 +206,25 @@
 
             <h2>📘 Mis Notas</h2>
 
-            {% if notas %}
+            {% if notas and notas|length > 0 %}
 
                 {% for nota in notas %}
 
                 <div class="nota">
 
-                    <strong>{{ nota.materia }}</strong>
+                    <strong>{{ nota.materia or "Materia" }}</strong>
 
                     <br><br>
 
                     Nota obtenida:
-                    <strong>{{ nota.nota }}</strong>
+                    <strong>{{ nota.nota or "0" }}</strong>
 
                 </div>
 
                 {% endfor %}
 
             {% else %}
-
-                <br>
-
                 <p>No tienes notas registradas.</p>
-
             {% endif %}
 
         </div>
@@ -274,10 +235,7 @@
 
             <br>
 
-            <a
-                href="/certificado/{{ estudiante.id }}"
-                class="btn"
-            >
+            <a href="/certificado/{{ estudiante.id }}" class="btn">
                 Descargar certificado PDF
             </a>
 
