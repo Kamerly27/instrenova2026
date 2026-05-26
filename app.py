@@ -368,6 +368,46 @@ def panel_estudiante():
             conn.close()
 
 # =========================
+# CREAR MODULO
+# =========================
+@app.route("/crear_modulo", methods=["POST"])
+def crear_modulo():
+
+    if "docente_id" not in session:
+        return redirect("/docente_login")
+
+    titulo = request.form["titulo"]
+    descripcion = request.form["descripcion"]
+
+    docente_id = session["docente_id"]
+
+    conn = psycopg2.connect(
+        os.environ.get("DATABASE_URL")
+    )
+
+    cursor = conn.cursor()
+
+    cursor.execute("""
+        INSERT INTO modulos
+        (
+            titulo,
+            descripcion,
+            docente_id
+        )
+        VALUES (%s,%s,%s)
+    """, (
+        titulo,
+        descripcion,
+        docente_id
+    ))
+
+    conn.commit()
+
+    cursor.close()
+    conn.close()
+
+    return redirect("/panel_docente")
+# =========================
 # UPLOADS
 # =========================
 @app.route("/uploads/<filename>")
