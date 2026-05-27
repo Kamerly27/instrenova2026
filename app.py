@@ -737,6 +737,82 @@ def subir_actividad():
     return redirect("/panel_estudiante")
 
 # =========================================
+# ELIMINAR ESTUDIANTE
+# =========================================
+
+@app.route("/eliminar_estudiante/<int:estudiante_id>")
+def eliminar_estudiante(estudiante_id):
+
+    if "admin" not in session:
+        return redirect("/login")
+
+    conn = get_connection()
+    cursor = conn.cursor()
+
+    cursor.execute("""
+        DELETE FROM estudiantes
+        WHERE id=%s
+    """, (estudiante_id,))
+
+    conn.commit()
+
+    cursor.close()
+    conn.close()
+
+    return redirect("/admin")
+
+
+# =========================================
+# ELIMINAR DOCENTE
+# =========================================
+
+@app.route("/eliminar_docente/<int:docente_id>")
+def eliminar_docente(docente_id):
+
+    if "admin" not in session:
+        return redirect("/login")
+
+    conn = get_connection()
+    cursor = conn.cursor()
+
+    cursor.execute("""
+        DELETE FROM docentes
+        WHERE id=%s
+    """, (docente_id,))
+
+    conn.commit()
+
+    cursor.close()
+    conn.close()
+
+    return redirect("/admin")
+
+
+# =========================================
+# ELIMINAR CURSO
+# =========================================
+
+@app.route("/eliminar_curso/<int:curso_id>")
+def eliminar_curso(curso_id):
+
+    if "admin" not in session:
+        return redirect("/login")
+
+    conn = get_connection()
+    cursor = conn.cursor()
+
+    cursor.execute("""
+        DELETE FROM cursos
+        WHERE id=%s
+    """, (curso_id,))
+
+    conn.commit()
+
+    cursor.close()
+    conn.close()
+
+    return redirect("/admin")
+# =========================================
 # UPLOADS
 # =========================================
 
