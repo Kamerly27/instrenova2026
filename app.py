@@ -7,6 +7,10 @@ from datetime import datetime
 app = Flask(__name__)
 app.secret_key = "renova2026"
 
+# =========================================
+# UPLOADS
+# =========================================
+
 UPLOAD_FOLDER = "uploads"
 app.config["UPLOAD_FOLDER"] = UPLOAD_FOLDER
 
@@ -552,6 +556,9 @@ def crear_modulo():
 @app.route("/subir_archivo/<int:modulo_id>", methods=["POST"])
 def subir_archivo(modulo_id):
 
+    if "docente_id" not in session:
+        return redirect("/docente_login")
+
     titulo = request.form["titulo"]
     tipo = request.form["tipo"]
 
@@ -638,7 +645,7 @@ def eliminar_contenido(contenido_id):
     conn.commit()
 
     cursor.close()
-   conn.close()
+    conn.close()
 
     return redirect("/panel_docente")
 
@@ -680,7 +687,7 @@ def guardar_nota():
     return redirect("/panel_docente")
 
 # =========================================
-# SUBIR ACTIVIDAD
+# SUBIR ACTIVIDAD ESTUDIANTE
 # =========================================
 
 @app.route("/subir_actividad", methods=["POST"])
