@@ -361,14 +361,22 @@ def panel_docente():
 
     docente_id = session["docente_id"]
 
+    # DOCENTE
     cursor.execute("""
         SELECT id,nombre,correo
         FROM docentes
         WHERE id=%s
     """, (docente_id,))
 
-    docente = cursor.fetchone()
+    d = cursor.fetchone()
 
+    docente = {
+        "id": d[0],
+        "nombre": d[1],
+        "correo": d[2]
+    }
+
+    # MODULOS
     cursor.execute("""
         SELECT id,titulo,descripcion
         FROM modulos
@@ -376,16 +384,40 @@ def panel_docente():
         ORDER BY id DESC
     """, (docente_id,))
 
-    modulos = cursor.fetchall()
+    modulos_raw = cursor.fetchall()
 
+    modulos = []
+
+    for m in modulos_raw:
+
+        modulos.append({
+            "id": m[0],
+            "titulo": m[1],
+            "descripcion": m[2]
+        })
+
+    # CONTENIDOS
     cursor.execute("""
         SELECT id,titulo,tipo,url,modulo_id
         FROM contenidos
         ORDER BY id DESC
     """)
 
-    contenidos = cursor.fetchall()
+    contenidos_raw = cursor.fetchall()
 
+    contenidos = []
+
+    for c in contenidos_raw:
+
+        contenidos.append({
+            "id": c[0],
+            "titulo": c[1],
+            "tipo": c[2],
+            "url": c[3],
+            "modulo_id": c[4]
+        })
+
+    # ESTUDIANTES + NOTAS
     cursor.execute("""
         SELECT
             estudiantes.id,
@@ -404,8 +436,23 @@ def panel_docente():
         ORDER BY estudiantes.id DESC
     """)
 
-    estudiantes = cursor.fetchall()
+    estudiantes_raw = cursor.fetchall()
 
+    estudiantes = []
+
+    for e in estudiantes_raw:
+
+        estudiantes.append({
+            "id": e[0],
+            "nombre": e[1],
+            "correo": e[2],
+            "documento": e[3],
+            "materia": e[4],
+            "nota": e[5],
+            "observacion": e[6]
+        })
+
+    # ENTREGAS
     cursor.execute("""
         SELECT
             entregas.id,
@@ -425,7 +472,19 @@ def panel_docente():
         ORDER BY entregas.id DESC
     """)
 
-    entregas = cursor.fetchall()
+    entregas_raw = cursor.fetchall()
+
+    entregas = []
+
+    for x in entregas_raw:
+
+        entregas.append({
+            "id": x[0],
+            "estudiante": x[1],
+            "modulo": x[2],
+            "archivo": x[3],
+            "fecha": x[4]
+        })
 
     cursor.close()
     conn.close()
@@ -436,86 +495,6 @@ def panel_docente():
         modulos=modulos,
         contenidos=contenidos,
         estudiantes=estudiantes,
-        entregas=entregas
-    )
-
-# =========================================
-# PANEL ESTUDIANTE
-# =========================================
-
-@app.route("/panel_estudiante")
-def panel_estudiante():
-
-    if "estudiante_id" not in session:
-        return redirect("/estudiante_login")
-
-    estudiante_id = session["estudiante_id"]
-
-    conn = get_connection()
-    cursor = conn.cursor()
-
-    cursor.execute("""
-        SELECT
-            id,
-            nombre,
-            documento,
-            correo
-        FROM estudiantes
-        WHERE id=%s
-    """, (estudiante_id,))
-
-    estudiante = cursor.fetchone()
-
-    cursor.execute("""
-        SELECT id,titulo,descripcion
-        FROM modulos
-        ORDER BY id DESC
-    """)
-
-    modulos = cursor.fetchall()
-
-    cursor.execute("""
-        SELECT id,titulo,tipo,url,modulo_id
-        FROM contenidos
-        ORDER BY id DESC
-    """)
-
-    contenidos = cursor.fetchall()
-
-    cursor.execute("""
-        SELECT materia,nota,observacion
-        FROM notas
-        WHERE estudiante_id=%s
-    """, (estudiante_id,))
-
-    notas = cursor.fetchall()
-
-    cursor.execute("""
-        SELECT
-            entregas.id,
-            modulos.titulo,
-            entregas.archivo,
-            entregas.fecha
-
-        FROM entregas
-
-        INNER JOIN modulos
-        ON entregas.modulo_id = modulos.id
-
-        WHERE entregas.estudiante_id=%s
-    """, (estudiante_id,))
-
-    entregas = cursor.fetchall()
-
-    cursor.close()
-    conn.close()
-
-    return render_template(
-        "panel_estudiante.html",
-        estudiante=estudiante,
-        modulos=modulos,
-        contenidos=contenidos,
-        notas=notas,
         entregas=entregas
     )
 
