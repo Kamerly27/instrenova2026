@@ -788,6 +788,9 @@ def eliminar_contenido(contenido_id):
 @app.route("/guardar_nota", methods=["POST"])
 def guardar_nota():
 
+    if "docente_id" not in session:
+        return redirect("/docente_login")
+
     estudiante_id = request.form["estudiante_id"]
     materia = request.form["materia"]
     nota = request.form["nota"]
@@ -817,79 +820,6 @@ def guardar_nota():
     conn.close()
 
     return redirect("/panel_docente")
-
-# =========================================
-# SUBIR ACTIVIDAD
-# =========================================
-
-@app.route("/subir_actividad", methods=["POST"])
-def subir_actividad():
-
-    if "estudiante_id" not in session:
-        return redirect("/estudiante_login")
-
-    modulo_id = request.form["modulo_id"]
-
-    archivo = request.files["archivo"]
-
-    nombre_archivo = secure_filename(
-        archivo.filename
-    )
-
-    archivo.save(
-        os.path.join(
-            app.config["UPLOAD_FOLDER"],
-            nombre_archivo
-        )
-    )
-
-    conn = get_connection()
-    cursor = conn.cursor()
-
-    cursor.execute("""
-        INSERT INTO entregas(
-            estudiante_id,
-            modulo_id,
-            archivo,
-            fecha
-        )
-        VALUES(%s,%s,%s,%s)
-    """, (
-        session["estudiante_id"],
-        modulo_id,
-        nombre_archivo,
-        datetime.now().strftime("%Y-%m-%d %H:%M")
-    ))
-
-    conn.commit()
-
-    cursor.close()
-    conn.close()
-
-    return redirect("/panel_estudiante")
-
-# =========================================
-# UPLOADS
-# =========================================
-
-@app.route("/uploads/<filename>")
-def uploads(filename):
-
-    return send_from_directory(
-        app.config["UPLOAD_FOLDER"],
-        filename
-    )
-
-# =========================================
-# LOGOUT
-# =========================================
-
-@app.route("/logout")
-def logout():
-
-    session.clear()
-
-    return redirect("/login")
 
 # =========================================
 # RUN
