@@ -653,16 +653,40 @@ def eliminar_contenido(contenido_id):
 # GUARDAR NOTA
 # =========================================
 
+# =========================================
+# GUARDAR NOTA
+# =========================================
+
 @app.route("/guardar_nota", methods=["POST"])
 def guardar_nota():
+
+    if "docente_id" not in session:
+        return redirect("/docente_login")
 
     estudiante_id = request.form["estudiante_id"]
     materia = request.form["materia"]
     nota = request.form["nota"]
-    observacion = request.form["observacion"]
+
+    observacion = request.form.get(
+        "observacion",
+        ""
+    )
 
     conn = get_connection()
     cursor = conn.cursor()
+
+    # VERIFICAR SI EXISTE COLUMNA OBSERVACION
+    try:
+
+        cursor.execute("""
+            ALTER TABLE notas
+            ADD COLUMN observacion TEXT
+        """)
+
+        conn.commit()
+
+    except:
+        pass
 
     cursor.execute("""
         INSERT INTO notas(
