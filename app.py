@@ -7,10 +7,6 @@ from datetime import datetime
 app = Flask(__name__)
 app.secret_key = "renova2026"
 
-# =========================================
-# UPLOADS
-# =========================================
-
 UPLOAD_FOLDER = "uploads"
 app.config["UPLOAD_FOLDER"] = UPLOAD_FOLDER
 
@@ -167,6 +163,147 @@ def admin():
     )
 
 # =========================================
+# CREAR CURSO
+# =========================================
+
+@app.route("/crear_curso", methods=["POST"])
+def crear_curso():
+
+    nombre = request.form["nombre"]
+
+    conn = get_connection()
+    cursor = conn.cursor()
+
+    cursor.execute("""
+        INSERT INTO cursos(nombre)
+        VALUES(%s)
+    """, (nombre,))
+
+    conn.commit()
+
+    cursor.close()
+    conn.close()
+
+    return redirect("/admin")
+
+# =========================================
+# CREAR DOCENTE
+# =========================================
+
+@app.route("/crear_docente", methods=["POST"])
+def crear_docente():
+
+    nombre = request.form["nombre"]
+    correo = request.form["correo"]
+    password = request.form["password"]
+    curso_id = request.form["curso_id"]
+
+    conn = get_connection()
+    cursor = conn.cursor()
+
+    cursor.execute("""
+        INSERT INTO docentes(
+            nombre,
+            correo,
+            password,
+            curso_id
+        )
+        VALUES(%s,%s,%s,%s)
+    """, (
+        nombre,
+        correo,
+        password,
+        curso_id
+    ))
+
+    conn.commit()
+
+    cursor.close()
+    conn.close()
+
+    return redirect("/admin")
+
+# =========================================
+# CREAR ESTUDIANTE
+# =========================================
+
+@app.route("/crear_estudiante", methods=["POST"])
+def crear_estudiante():
+
+    nombre = request.form["nombre"]
+    documento = request.form["documento"]
+    correo = request.form["correo"]
+    password = request.form["password"]
+    curso_id = request.form["curso_id"]
+
+    conn = get_connection()
+    cursor = conn.cursor()
+
+    cursor.execute("""
+        INSERT INTO estudiantes(
+            nombre,
+            documento,
+            correo,
+            password,
+            curso_id
+        )
+        VALUES(%s,%s,%s,%s,%s)
+    """, (
+        nombre,
+        documento,
+        correo,
+        password,
+        curso_id
+    ))
+
+    conn.commit()
+
+    cursor.close()
+    conn.close()
+
+    return redirect("/admin")
+
+# =========================================
+# ELIMINAR
+# =========================================
+
+@app.route("/eliminar_docente/<int:id>")
+def eliminar_docente(id):
+
+    conn = get_connection()
+    cursor = conn.cursor()
+
+    cursor.execute("""
+        DELETE FROM docentes
+        WHERE id=%s
+    """, (id,))
+
+    conn.commit()
+
+    cursor.close()
+    conn.close()
+
+    return redirect("/admin")
+
+@app.route("/eliminar_estudiante/<int:id>")
+def eliminar_estudiante(id):
+
+    conn = get_connection()
+    cursor = conn.cursor()
+
+    cursor.execute("""
+        DELETE FROM estudiantes
+        WHERE id=%s
+    """, (id,))
+
+    conn.commit()
+
+    cursor.close()
+    conn.close()
+
+    return redirect("/admin")
+
+# =========================================
 # LOGIN DOCENTE
 # =========================================
 
@@ -198,7 +335,6 @@ def docente_login():
         if docente:
 
             session["docente_id"] = docente[0]
-            session["docente_nombre"] = docente[1]
 
             return redirect("/panel_docente")
 
@@ -241,7 +377,6 @@ def estudiante_login():
         if estudiante:
 
             session["estudiante_id"] = estudiante[0]
-            session["estudiante_nombre"] = estudiante[1]
 
             return redirect("/panel_estudiante")
 
@@ -556,9 +691,6 @@ def crear_modulo():
 @app.route("/subir_archivo/<int:modulo_id>", methods=["POST"])
 def subir_archivo(modulo_id):
 
-    if "docente_id" not in session:
-        return redirect("/docente_login")
-
     titulo = request.form["titulo"]
     tipo = request.form["tipo"]
 
@@ -653,40 +785,16 @@ def eliminar_contenido(contenido_id):
 # GUARDAR NOTA
 # =========================================
 
-# =========================================
-# GUARDAR NOTA
-# =========================================
-
 @app.route("/guardar_nota", methods=["POST"])
 def guardar_nota():
-
-    if "docente_id" not in session:
-        return redirect("/docente_login")
 
     estudiante_id = request.form["estudiante_id"]
     materia = request.form["materia"]
     nota = request.form["nota"]
-
-    observacion = request.form.get(
-        "observacion",
-        ""
-    )
+    observacion = request.form["observacion"]
 
     conn = get_connection()
     cursor = conn.cursor()
-
-    # VERIFICAR SI EXISTE COLUMNA OBSERVACION
-    try:
-
-        cursor.execute("""
-            ALTER TABLE notas
-            ADD COLUMN observacion TEXT
-        """)
-
-        conn.commit()
-
-    except:
-        pass
 
     cursor.execute("""
         INSERT INTO notas(
@@ -711,7 +819,7 @@ def guardar_nota():
     return redirect("/panel_docente")
 
 # =========================================
-# SUBIR ACTIVIDAD ESTUDIANTE
+# SUBIR ACTIVIDAD
 # =========================================
 
 @app.route("/subir_actividad", methods=["POST"])
@@ -760,193 +868,6 @@ def subir_actividad():
 
     return redirect("/panel_estudiante")
 
-# =========================================
-# CREAR CURSO
-# =========================================
-
-@app.route("/crear_curso", methods=["POST"])
-def crear_curso():
-
-    if "admin" not in session:
-        return redirect("/login")
-
-    nombre = request.form["nombre"]
-
-    conn = get_connection()
-    cursor = conn.cursor()
-
-    cursor.execute("""
-        INSERT INTO cursos(nombre)
-        VALUES(%s)
-    """, (nombre,))
-
-    conn.commit()
-
-    cursor.close()
-    conn.close()
-
-    return redirect("/admin")
-
-
-# =========================================
-# CREAR DOCENTE
-# =========================================
-
-@app.route("/crear_docente", methods=["POST"])
-def crear_docente():
-
-    if "admin" not in session:
-        return redirect("/login")
-
-    nombre = request.form["nombre"]
-    correo = request.form["correo"]
-    password = request.form["password"]
-    curso_id = request.form["curso_id"]
-
-    conn = get_connection()
-    cursor = conn.cursor()
-
-    cursor.execute("""
-        INSERT INTO docentes(
-            nombre,
-            correo,
-            password,
-            curso_id
-        )
-        VALUES(%s,%s,%s,%s)
-    """, (
-        nombre,
-        correo,
-        password,
-        curso_id
-    ))
-
-    conn.commit()
-
-    cursor.close()
-    conn.close()
-
-    return redirect("/admin")
-
-
-# =========================================
-# CREAR ESTUDIANTE
-# =========================================
-
-@app.route("/crear_estudiante", methods=["POST"])
-def crear_estudiante():
-
-    if "admin" not in session:
-        return redirect("/login")
-
-    nombre = request.form["nombre"]
-    documento = request.form["documento"]
-    correo = request.form["correo"]
-    password = request.form["password"]
-    curso_id = request.form["curso_id"]
-
-    conn = get_connection()
-    cursor = conn.cursor()
-
-    cursor.execute("""
-        INSERT INTO estudiantes(
-            nombre,
-            documento,
-            correo,
-            password,
-            curso_id
-        )
-        VALUES(%s,%s,%s,%s,%s)
-    """, (
-        nombre,
-        documento,
-        correo,
-        password,
-        curso_id
-    ))
-
-    conn.commit()
-
-    cursor.close()
-    conn.close()
-
-    return redirect("/admin")
-# =========================================
-# ELIMINAR ESTUDIANTE
-# =========================================
-
-@app.route("/eliminar_estudiante/<int:estudiante_id>")
-def eliminar_estudiante(estudiante_id):
-
-    if "admin" not in session:
-        return redirect("/login")
-
-    conn = get_connection()
-    cursor = conn.cursor()
-
-    cursor.execute("""
-        DELETE FROM estudiantes
-        WHERE id=%s
-    """, (estudiante_id,))
-
-    conn.commit()
-
-    cursor.close()
-    conn.close()
-
-    return redirect("/admin")
-
-
-# =========================================
-# ELIMINAR DOCENTE
-# =========================================
-
-@app.route("/eliminar_docente/<int:docente_id>")
-def eliminar_docente(docente_id):
-
-    if "admin" not in session:
-        return redirect("/login")
-
-    conn = get_connection()
-    cursor = conn.cursor()
-
-    cursor.execute("""
-        DELETE FROM docentes
-        WHERE id=%s
-    """, (docente_id,))
-
-    conn.commit()
-
-    cursor.close()
-    conn.close()
-
-    return redirect("/admin")
-
-
-# =========================================
-# ELIMINAR CURSO
-# =========================================
-
-@app.route("/eliminar_curso/<int:curso_id>")
-def eliminar_curso(curso_id):
-
-    if "admin" not in session:
-        return redirect("/login")
-
-    conn = get_connection()
-    cursor = conn.cursor()
-
-    cursor.execute("""
-        DELETE FROM cursos
-        WHERE id=%s
-    """, (curso_id,))
-
-    conn.commit()
-
-    cursor.close()
-    conn.close()
-
-    return redirect("/admin")
 # =========================================
 # UPLOADS
 # =========================================

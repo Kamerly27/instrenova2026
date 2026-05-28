@@ -71,13 +71,13 @@ padding:30px;
 .banner{
 background:linear-gradient(90deg,#071739,#2563eb);
 color:white;
-padding:45px;
-border-radius:30px;
-margin-bottom:35px;
+padding:40px;
+border-radius:25px;
+margin-bottom:30px;
 }
 
 .banner h2{
-font-size:38px;
+font-size:35px;
 margin-bottom:10px;
 }
 
@@ -155,7 +155,6 @@ color:white;
 border-radius:10px;
 text-decoration:none;
 margin-top:10px;
-margin-right:10px;
 }
 
 .btn:hover{
@@ -167,7 +166,7 @@ background:#dc2626;
 }
 
 .btn-danger:hover{
-background:#b91c1c;
+background:#991b1b;
 }
 
 .tabla{
@@ -205,7 +204,6 @@ class="logo">
 
 <a href="#estadisticas">📊 Estadísticas</a>
 <a href="#modulos">📚 Módulos</a>
-<a href="#notas">📘 Notas</a>
 <a href="#estudiantes">👨‍🎓 Estudiantes</a>
 <a href="#entregas">📤 Entregas</a>
 <a href="/logout">🚪 Cerrar sesión</a>
@@ -217,11 +215,11 @@ class="logo">
 <div class="banner">
 
 <h2>
-👨‍🏫 Bienvenido {{ docente.nombre }}
+Bienvenido {{ docente.nombre }}
 </h2>
 
 <p>
-Panel Académico Renova
+Sistema Académico Renova
 </p>
 
 </div>
@@ -254,7 +252,7 @@ Panel Académico Renova
 <input
 type="text"
 name="titulo"
-placeholder="Ejemplo: MÓDULO 1 MATEMÁTICAS"
+placeholder="Título del módulo"
 required>
 
 <textarea
@@ -276,11 +274,11 @@ Crear módulo
 
 <div class="modulo">
 
-<h2 style="font-size:32px;color:#2563eb;">
-{{ modulo.titulo }}
+<h2 style="font-size:32px;">
+📚 {{ modulo.titulo }}
 </h2>
 
-<p style="margin-top:10px;">
+<p style="margin-top:15px;">
 {{ modulo.descripcion }}
 </p>
 
@@ -312,8 +310,9 @@ required>
 <option value="Guía">Guía</option>
 <option value="Taller">Taller</option>
 <option value="Video">Video</option>
-<option value="Examen">Examen</option>
 <option value="Imagen">Imagen</option>
+<option value="PDF">PDF</option>
+<option value="Examen">Examen</option>
 
 </select>
 
@@ -374,27 +373,37 @@ Eliminar
 
 </div>
 
-<div class="card" id="notas">
+<div class="card" id="estudiantes">
 
-<h2>📘 Registrar notas</h2>
+<h2>👨‍🎓 Estudiantes matriculados</h2>
+
+<table class="tabla">
+
+<tr>
+
+<th>Nombre</th>
+<th>Documento</th>
+<th>Correo</th>
+<th>Registrar nota</th>
+
+</tr>
+
+{% for e in estudiantes %}
+
+<tr>
+
+<td>{{ e.nombre }}</td>
+<td>{{ e.documento }}</td>
+<td>{{ e.correo }}</td>
+
+<td>
 
 <form method="POST" action="/guardar_nota">
 
-<select name="estudiante_id" required>
-
-<option value="">
-Seleccione estudiante
-</option>
-
-{% for estudiante in estudiantes %}
-
-<option value="{{ estudiante.id }}">
-{{ estudiante.nombre }}
-</option>
-
-{% endfor %}
-
-</select>
+<input
+type="hidden"
+name="estudiante_id"
+value="{{ e.id }}">
 
 <input
 type="text"
@@ -405,8 +414,6 @@ required>
 <input
 type="number"
 step="0.1"
-min="0"
-max="5"
 name="nota"
 placeholder="Nota"
 required>
@@ -416,32 +423,12 @@ name="observacion"
 placeholder="Observación"></textarea>
 
 <button type="submit">
-Guardar nota
+Guardar
 </button>
 
 </form>
 
-</div>
-
-<div class="card" id="estudiantes">
-
-<h2>👨‍🎓 Estudiantes matriculados</h2>
-
-<table class="tabla">
-
-<tr>
-<th>Nombre</th>
-<th>Correo</th>
-<th>Documento</th>
-</tr>
-
-{% for estudiante in estudiantes %}
-
-<tr>
-
-<td>{{ estudiante.nombre }}</td>
-<td>{{ estudiante.correo }}</td>
-<td>{{ estudiante.documento }}</td>
+</td>
 
 </tr>
 
@@ -471,7 +458,6 @@ Guardar nota
 <tr>
 
 <td>{{ e.estudiante }}</td>
-
 <td>{{ e.modulo }}</td>
 
 <td>
@@ -481,7 +467,7 @@ href="/uploads/{{ e.archivo }}"
 target="_blank"
 class="btn">
 
-Ver archivo
+Descargar
 
 </a>
 

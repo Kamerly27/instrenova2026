@@ -31,6 +31,7 @@ height:100vh;
 background:#071739;
 padding:25px;
 overflow-y:auto;
+box-shadow:5px 0 20px rgba(0,0,0,0.08);
 }
 
 .logo{
@@ -77,15 +78,45 @@ color:white;
 padding:45px;
 border-radius:30px;
 margin-bottom:35px;
+box-shadow:0 10px 30px rgba(0,0,0,0.15);
+position:relative;
+overflow:hidden;
+}
+
+.banner::after{
+content:"";
+position:absolute;
+right:-60px;
+top:-60px;
+width:220px;
+height:220px;
+background:rgba(255,255,255,0.08);
+border-radius:50%;
 }
 
 .banner h2{
 font-size:38px;
 margin-bottom:10px;
+position:relative;
+z-index:2;
 }
 
 .banner p{
 font-size:18px;
+opacity:0.95;
+position:relative;
+z-index:2;
+}
+
+.badge{
+margin-top:25px;
+display:inline-block;
+background:rgba(255,255,255,0.15);
+padding:14px 20px;
+border-radius:15px;
+font-size:15px;
+position:relative;
+z-index:2;
 }
 
 .card{
@@ -94,6 +125,11 @@ padding:25px;
 border-radius:22px;
 box-shadow:0 5px 15px rgba(0,0,0,0.06);
 margin-bottom:25px;
+transition:0.3s;
+}
+
+.card:hover{
+transform:translateY(-3px);
 }
 
 .card h2{
@@ -105,14 +141,29 @@ margin-bottom:18px;
 background:#f8fafc;
 padding:20px;
 margin-bottom:20px;
+border-radius:18px;
+border-left:6px solid #2563eb;
+}
+
+.modulo h3{
+margin-bottom:10px;
+color:#071739;
+}
+
+.archivo{
+background:white;
+padding:15px;
 border-radius:15px;
-border-left:5px solid #2563eb;
+margin-top:15px;
+box-shadow:0 0 10px rgba(0,0,0,0.05);
 }
 
 table{
 width:100%;
 border-collapse:collapse;
 margin-top:15px;
+overflow:hidden;
+border-radius:15px;
 }
 
 th{
@@ -124,7 +175,7 @@ text-align:left;
 
 td{
 padding:15px;
-border-bottom:1px solid #ddd;
+border-bottom:1px solid #e5e7eb;
 background:white;
 }
 
@@ -138,6 +189,8 @@ text-decoration:none;
 font-size:14px;
 font-weight:bold;
 transition:0.3s;
+border:none;
+cursor:pointer;
 margin-top:10px;
 }
 
@@ -155,19 +208,9 @@ border:1px solid #ccc;
 font-size:15px;
 }
 
-button{
-margin-top:15px;
-background:#2563eb;
-color:white;
-border:none;
-padding:14px 20px;
-border-radius:12px;
-cursor:pointer;
-font-size:15px;
-}
-
-button:hover{
-background:#1746b3;
+.info p{
+margin-bottom:12px;
+font-size:16px;
 }
 
 @media(max-width:900px){
@@ -203,9 +246,7 @@ class="logo">
 
 <h1>ESTUDIANTE</h1>
 
-<a href="#informacion">👤 Información</a>
 <a href="#modulos">📚 Módulos</a>
-<a href="#material">📁 Material</a>
 <a href="#notas">📘 Notas</a>
 <a href="#entregas">📤 Entregas</a>
 <a href="/logout">🚪 Cerrar sesión</a>
@@ -221,56 +262,50 @@ class="logo">
 </h2>
 
 <p>
-Plataforma Académica Renova
+Panel Académico Renova
 </p>
+
+<div class="badge">
+📚 Consulta módulos, contenidos y notas
+</div>
 
 </div>
 
-<div class="card" id="informacion">
+<div class="card info">
 
-<h2>👤 Información del estudiante</h2>
+<h2>👤 Información</h2>
 
 <p><b>Nombre:</b> {{ estudiante.nombre }}</p>
-
 <p><b>Documento:</b> {{ estudiante.documento }}</p>
-
 <p><b>Correo:</b> {{ estudiante.correo }}</p>
 
 </div>
 
 <div class="card" id="modulos">
 
-<h2>📚 Módulos académicos</h2>
+<h2>📚 Módulos Académicos</h2>
 
 {% for m in modulos %}
 
 <div class="modulo">
 
-<h3 style="color:#2563eb;font-size:28px;">
-{{ m.titulo }}
+<h3>
+📘 {{ m.titulo }}
 </h3>
 
-<p style="margin-top:10px;">
+<p>
 {{ m.descripcion }}
 </p>
 
-</div>
-
-{% endfor %}
-
-</div>
-
-<div class="card" id="material">
-
-<h2>📁 Material de estudio</h2>
-
 {% for c in contenidos %}
 
-<div class="modulo">
+{% if c.modulo_id == m.id %}
 
-<h3>
-📘 {{ c.titulo }}
-</h3>
+<div class="archivo">
+
+<h4>
+{{ c.titulo }}
+</h4>
 
 <p>
 Tipo:
@@ -278,9 +313,9 @@ Tipo:
 </p>
 
 <a
-class="btn"
 href="{{ c.url }}"
-target="_blank">
+target="_blank"
+class="btn">
 
 Abrir contenido
 
@@ -288,45 +323,38 @@ Abrir contenido
 
 </div>
 
+{% endif %}
+
 {% endfor %}
-
-</div>
-
-<div class="card">
-
-<h2>📤 Subir actividad</h2>
 
 <form
 method="POST"
 action="/subir_actividad"
 enctype="multipart/form-data">
 
-<select name="modulo_id" required>
-
-<option value="">
-Seleccione módulo
-</option>
-
-{% for m in modulos %}
-
-<option value="{{ m.id }}">
-{{ m.titulo }}
-</option>
-
-{% endfor %}
-
-</select>
+<input
+type="hidden"
+name="modulo_id"
+value="{{ m.id }}">
 
 <input
 type="file"
 name="archivo"
 required>
 
-<button type="submit">
-Enviar actividad
+<button
+type="submit"
+class="btn">
+
+Subir actividad
+
 </button>
 
 </form>
+
+</div>
+
+{% endfor %}
 
 </div>
 
@@ -362,7 +390,7 @@ Enviar actividad
 
 <div class="card" id="entregas">
 
-<h2>📤 Actividades enviadas</h2>
+<h2>📤 Historial de entregas</h2>
 
 <table>
 
