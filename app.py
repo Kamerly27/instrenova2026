@@ -4,7 +4,7 @@ import os
 from werkzeug.utils import secure_filename
 from datetime import datetime
 
-app = Flask(__name__)
+app = Flask(name)
 app.secret_key = "renova2026"
 
 UPLOAD_FOLDER = "uploads"
@@ -12,869 +12,485 @@ app.config["UPLOAD_FOLDER"] = UPLOAD_FOLDER
 
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
-# =========================================
-# DATABASE
-# =========================================
+=========================================
+DATABASE
+=========================================
 
 def get_connection():
-    return psycopg2.connect(
-        os.environ.get("DATABASE_URL")
-    )
+return psycopg2.connect(
+os.environ.get("DATABASE_URL")
+)
 
-# =========================================
-# INIT DB
-# =========================================
+=========================================
+INIT DB
+=========================================
 
 def init_db():
 
-    conn = get_connection()
-    cursor = conn.cursor()
+conn = get_connection()
+cursor = conn.cursor()
 
-    cursor.execute("""
-    CREATE TABLE IF NOT EXISTS cursos(
-        id SERIAL PRIMARY KEY,
-        nombre TEXT
-    )
-    """)
+cursor.execute("""
+CREATE TABLE IF NOT EXISTS cursos(
+    id SERIAL PRIMARY KEY,
+    nombre TEXT
+)
+""")
 
-    cursor.execute("""
-    CREATE TABLE IF NOT EXISTS docentes(
-        id SERIAL PRIMARY KEY,
-        nombre TEXT,
-        correo TEXT UNIQUE,
-        password TEXT,
-        curso_id INTEGER
-    )
-    """)
+cursor.execute("""
+CREATE TABLE IF NOT EXISTS docentes(
+    id SERIAL PRIMARY KEY,
+    nombre TEXT,
+    correo TEXT UNIQUE,
+    password TEXT,
+    curso_id INTEGER
+)
+""")
 
-    cursor.execute("""
-    CREATE TABLE IF NOT EXISTS estudiantes(
-        id SERIAL PRIMARY KEY,
-        nombre TEXT,
-        documento TEXT,
-        correo TEXT UNIQUE,
-        password TEXT,
-        curso_id INTEGER
-    )
-    """)
+cursor.execute("""
+CREATE TABLE IF NOT EXISTS estudiantes(
+    id SERIAL PRIMARY KEY,
+    nombre TEXT,
+    documento TEXT,
+    correo TEXT UNIQUE,
+    password TEXT,
+    curso_id INTEGER
+)
+""")
 
-    cursor.execute("""
-    CREATE TABLE IF NOT EXISTS modulos(
-        id SERIAL PRIMARY KEY,
-        titulo TEXT,
-        descripcion TEXT,
-        docente_id INTEGER
-    )
-    """)
+cursor.execute("""
+CREATE TABLE IF NOT EXISTS modulos(
+    id SERIAL PRIMARY KEY,
+    titulo TEXT,
+    descripcion TEXT,
+    docente_id INTEGER
+)
+""")
 
-    cursor.execute("""
-    CREATE TABLE IF NOT EXISTS contenidos(
-        id SERIAL PRIMARY KEY,
-        titulo TEXT,
-        tipo TEXT,
-        url TEXT,
-        modulo_id INTEGER
-    )
-    """)
+cursor.execute("""
+CREATE TABLE IF NOT EXISTS contenidos(
+    id SERIAL PRIMARY KEY,
+    titulo TEXT,
+    tipo TEXT,
+    url TEXT,
+    modulo_id INTEGER
+)
+""")
 
-    cursor.execute("""
-    CREATE TABLE IF NOT EXISTS notas(
-        id SERIAL PRIMARY KEY,
-        estudiante_id INTEGER,
-        materia TEXT,
-        nota REAL,
-        observacion TEXT
-    )
-    """)
+cursor.execute("""
+CREATE TABLE IF NOT EXISTS notas(
+    id SERIAL PRIMARY KEY,
+    estudiante_id INTEGER,
+    materia TEXT,
+    nota REAL,
+    observacion TEXT
+)
+""")
 
-    cursor.execute("""
-    CREATE TABLE IF NOT EXISTS entregas(
-        id SERIAL PRIMARY KEY,
-        estudiante_id INTEGER,
-        modulo_id INTEGER,
-        archivo TEXT,
-        fecha TEXT
-    )
-    """)
+cursor.execute("""
+CREATE TABLE IF NOT EXISTS entregas(
+    id SERIAL PRIMARY KEY,
+    estudiante_id INTEGER,
+    modulo_id INTEGER,
+    archivo TEXT,
+    fecha TEXT
+)
+""")
 
-    conn.commit()
-    cursor.close()
-    conn.close()
+conn.commit()
+cursor.close()
+conn.close()
 
 init_db()
 
-# =========================================
-# LOGIN ADMIN
-# =========================================
+=========================================
+LOGIN ADMIN
+=========================================
 
 @app.route("/login", methods=["GET", "POST"])
 def login():
 
-    error = ""
+error = ""
 
-    if request.method == "POST":
+if request.method == "POST":
 
-        usuario = request.form["usuario"]
-        password = request.form["password"]
+    usuario = request.form["usuario"]
+    password = request.form["password"]
 
-        if usuario == "adminrenova" and password == "Renova2026!Panel$84":
+    if usuario == "adminrenova" and password == "Renova2026!Panel$84":
 
-            session["admin"] = True
+        session["admin"] = True
 
-            return redirect("/admin")
+        return redirect("/admin")
 
-        error = "Datos incorrectos"
+    error = "Datos incorrectos"
 
-    return render_template(
-        "login.html",
-        error=error
-    )
-
-# =========================================
-# ADMIN
-# =========================================
+return render_template(
+    "login.html",
+    error=error
+)
+=========================================
+ADMIN
+=========================================
 
 @app.route("/admin")
 def admin():
 
-    if "admin" not in session:
-        return redirect("/login")
+if "admin" not in session:
+    return redirect("/login")
 
-    conn = get_connection()
-    cursor = conn.cursor()
+conn = get_connection()
+cursor = conn.cursor()
 
-    cursor.execute("SELECT * FROM cursos")
-    cursos = cursor.fetchall()
+cursor.execute("SELECT * FROM cursos")
+cursos = cursor.fetchall()
 
-    cursor.execute("SELECT * FROM docentes")
-    docentes = cursor.fetchall()
+cursor.execute("SELECT * FROM docentes")
+docentes = cursor.fetchall()
 
-    cursor.execute("SELECT * FROM estudiantes")
-    estudiantes = cursor.fetchall()
+cursor.execute("SELECT * FROM estudiantes")
+estudiantes = cursor.fetchall()
 
-    cursor.close()
-    conn.close()
+cursor.close()
+conn.close()
 
-    return render_template(
-        "admin.html",
-        cursos=cursos,
-        docentes=docentes,
-        estudiantes=estudiantes
-    )
-
-# =========================================
-# CREAR CURSO
-# =========================================
+return render_template(
+    "admin.html",
+    cursos=cursos,
+    docentes=docentes,
+    estudiantes=estudiantes
+)
+=========================================
+CREAR CURSO
+=========================================
 
 @app.route("/crear_curso", methods=["POST"])
 def crear_curso():
 
-    nombre = request.form["nombre"]
+nombre = request.form["nombre"]
 
-    conn = get_connection()
-    cursor = conn.cursor()
+conn = get_connection()
+cursor = conn.cursor()
 
-    cursor.execute("""
-        INSERT INTO cursos(nombre)
-        VALUES(%s)
-    """, (nombre,))
+cursor.execute("""
+    INSERT INTO cursos(nombre)
+    VALUES(%s)
+""", (nombre,))
 
-    conn.commit()
+conn.commit()
 
-    cursor.close()
-    conn.close()
+cursor.close()
+conn.close()
 
-    return redirect("/admin")
-
-# =========================================
-# CREAR DOCENTE
-# =========================================
+return redirect("/admin")
+=========================================
+CREAR DOCENTE
+=========================================
 
 @app.route("/crear_docente", methods=["POST"])
 def crear_docente():
 
-    nombre = request.form["nombre"]
-    correo = request.form["correo"]
-    password = request.form["password"]
-    curso_id = request.form["curso_id"]
+nombre = request.form["nombre"]
+correo = request.form["correo"]
+password = request.form["password"]
+curso_id = request.form["curso_id"]
 
-    conn = get_connection()
-    cursor = conn.cursor()
+conn = get_connection()
+cursor = conn.cursor()
 
-    cursor.execute("""
-        INSERT INTO docentes(
-            nombre,
-            correo,
-            password,
-            curso_id
-        )
-        VALUES(%s,%s,%s,%s)
-    """, (
+cursor.execute("""
+    INSERT INTO docentes(
         nombre,
         correo,
         password,
         curso_id
-    ))
+    )
+    VALUES(%s,%s,%s,%s)
+""", (
+    nombre,
+    correo,
+    password,
+    curso_id
+))
 
-    conn.commit()
+conn.commit()
 
-    cursor.close()
-    conn.close()
+cursor.close()
+conn.close()
 
-    return redirect("/admin")
-
-# =========================================
-# CREAR ESTUDIANTE
-# =========================================
+return redirect("/admin")
+=========================================
+CREAR ESTUDIANTE
+=========================================
 
 @app.route("/crear_estudiante", methods=["POST"])
 def crear_estudiante():
 
-    nombre = request.form["nombre"]
-    documento = request.form["documento"]
-    correo = request.form["correo"]
-    password = request.form["password"]
-    curso_id = request.form["curso_id"]
+nombre = request.form["nombre"]
+documento = request.form["documento"]
+correo = request.form["correo"]
+password = request.form["password"]
+curso_id = request.form["curso_id"]
 
-    conn = get_connection()
-    cursor = conn.cursor()
+conn = get_connection()
+cursor = conn.cursor()
 
-    cursor.execute("""
-        INSERT INTO estudiantes(
-            nombre,
-            documento,
-            correo,
-            password,
-            curso_id
-        )
-        VALUES(%s,%s,%s,%s,%s)
-    """, (
+cursor.execute("""
+    INSERT INTO estudiantes(
         nombre,
         documento,
         correo,
         password,
         curso_id
-    ))
+    )
+    VALUES(%s,%s,%s,%s,%s)
+""", (
+    nombre,
+    documento,
+    correo,
+    password,
+    curso_id
+))
 
-    conn.commit()
+conn.commit()
 
-    cursor.close()
-    conn.close()
+cursor.close()
+conn.close()
 
-    return redirect("/admin")
-
-# =========================================
-# LOGIN DOCENTE
-# =========================================
+return redirect("/admin")
+=========================================
+LOGIN DOCENTE
+=========================================
 
 @app.route("/docente_login", methods=["GET", "POST"])
 def docente_login():
 
-    error = ""
+error = ""
 
-    if request.method == "POST":
+if request.method == "POST":
 
-        correo = request.form["correo"]
-        password = request.form["password"]
-
-        conn = get_connection()
-        cursor = conn.cursor()
-
-        cursor.execute("""
-            SELECT id,nombre
-            FROM docentes
-            WHERE correo=%s
-            AND password=%s
-        """, (correo, password))
-
-        docente = cursor.fetchone()
-
-        cursor.close()
-        conn.close()
-
-        if docente:
-
-            session["docente_id"] = docente[0]
-
-            return redirect("/panel_docente")
-
-# =========================================
-# PANEL ESTUDIANTE
-# =========================================
-
-@app.route("/panel_estudiante")
-def panel_estudiante():
-
-    if "estudiante_id" not in session:
-        return redirect("/estudiante_login")
-
-    estudiante_id = session["estudiante_id"]
+    correo = request.form["correo"]
+    password = request.form["password"]
 
     conn = get_connection()
     cursor = conn.cursor()
 
     cursor.execute("""
-        SELECT
-            id,
-            nombre,
-            documento,
-            correo
-        FROM estudiantes
-        WHERE id=%s
-    """, (estudiante_id,))
+        SELECT id,nombre
+        FROM docentes
+        WHERE correo=%s
+        AND password=%s
+    """, (correo, password))
 
-    e = cursor.fetchone()
-
-    estudiante = {
-        "id": e[0],
-        "nombre": e[1],
-        "documento": e[2],
-        "correo": e[3]
-    }
-
-    cursor.execute("""
-        SELECT id,titulo,descripcion
-        FROM modulos
-        ORDER BY id DESC
-    """)
-
-    modulos_raw = cursor.fetchall()
-
-    modulos = []
-
-    for m in modulos_raw:
-
-        modulos.append({
-            "id": m[0],
-            "titulo": m[1],
-            "descripcion": m[2]
-        })
-
-    cursor.execute("""
-        SELECT id,titulo,tipo,url,modulo_id
-        FROM contenidos
-        ORDER BY id DESC
-    """)
-
-    contenidos_raw = cursor.fetchall()
-
-    contenidos = []
-
-    for c in contenidos_raw:
-
-        contenidos.append({
-            "id": c[0],
-            "titulo": c[1],
-            "tipo": c[2],
-            "url": "/uploads/" + c[3],
-            "modulo_id": c[4]
-        })
-
-    cursor.execute("""
-        SELECT materia,nota,observacion
-        FROM notas
-        WHERE estudiante_id=%s
-    """, (estudiante_id,))
-
-    notas_raw = cursor.fetchall()
-
-    notas = []
-
-    for n in notas_raw:
-
-        notas.append({
-            "materia": n[0],
-            "nota": n[1],
-            "observacion": n[2]
-        })
-
-    cursor.execute("""
-        SELECT
-            entregas.id,
-            modulos.titulo,
-            entregas.archivo,
-            entregas.fecha
-
-        FROM entregas
-
-        INNER JOIN modulos
-        ON entregas.modulo_id = modulos.id
-
-        WHERE entregas.estudiante_id=%s
-    """, (estudiante_id,))
-
-    entregas_raw = cursor.fetchall()
-
-    entregas = []
-
-    for x in entregas_raw:
-
-        entregas.append({
-            "id": x[0],
-            "modulo_nombre": x[1],
-            "archivo": x[2],
-            "fecha": x[3]
-        })
+    docente = cursor.fetchone()
 
     cursor.close()
     conn.close()
 
-    return render_template(
-        "panel_estudiante.html",
-        estudiante=estudiante,
-        modulos=modulos,
-        contenidos=contenidos,
-        notas=notas,
-        entregas=entregas
-    )
+    if docente:
 
-# =========================================
-# CREAR MODULO
-# =========================================
+        session["docente_id"] = docente[0]
 
-@app.route("/crear_modulo", methods=["POST"])
-def crear_modulo():
+        return redirect("/panel_docente")
 
-    if "docente_id" not in session:
-        return redirect("/docente_login")
+    error = "Correo o contraseña incorrectos"
 
-    titulo = request.form["titulo"]
-    descripcion = request.form["descripcion"]
-
-    conn = get_connection()
-    cursor = conn.cursor()
-
-    cursor.execute("""
-        INSERT INTO modulos(
-            titulo,
-            descripcion,
-            docente_id
-        )
-        VALUES(%s,%s,%s)
-    """, (
-        titulo,
-        descripcion,
-        session["docente_id"]
-    ))
-
-    conn.commit()
-
-    cursor.close()
-    conn.close()
-
-    return redirect("/panel_docente")
-
-# =========================================
-# SUBIR ARCHIVO
-# =========================================
-
-@app.route("/subir_archivo/<int:modulo_id>", methods=["POST"])
-def subir_archivo(modulo_id):
-
-    titulo = request.form["titulo"]
-    tipo = request.form["tipo"]
-
-    archivo = request.files["archivo"]
-
-    nombre_archivo = secure_filename(
-        archivo.filename
-    )
-
-    archivo.save(
-        os.path.join(
-            app.config["UPLOAD_FOLDER"],
-            nombre_archivo
-        )
-    )
-
-    conn = get_connection()
-    cursor = conn.cursor()
-
-    cursor.execute("""
-        INSERT INTO contenidos(
-            titulo,
-            tipo,
-            url,
-            modulo_id
-        )
-        VALUES(%s,%s,%s,%s)
-    """, (
-        titulo,
-        tipo,
-        nombre_archivo,
-        modulo_id
-    ))
-
-    conn.commit()
-
-    cursor.close()
-    conn.close()
-
-    return redirect("/panel_docente")
-
-# =========================================
-# SUBIR ACTIVIDAD
-# =========================================
-
-@app.route("/subir_actividad", methods=["POST"])
-def subir_actividad():
-
-    modulo_id = request.form["modulo_id"]
-
-    archivo = request.files["archivo"]
-
-    nombre_archivo = secure_filename(
-        archivo.filename
-    )
-
-    archivo.save(
-        os.path.join(
-            app.config["UPLOAD_FOLDER"],
-            nombre_archivo
-        )
-    )
-
-    conn = get_connection()
-    cursor = conn.cursor()
-
-    cursor.execute("""
-        INSERT INTO entregas(
-            estudiante_id,
-            modulo_id,
-            archivo,
-            fecha
-        )
-        VALUES(%s,%s,%s,%s)
-    """, (
-        session["estudiante_id"],
-        modulo_id,
-        nombre_archivo,
-        datetime.now().strftime("%Y-%m-%d %H:%M")
-    ))
-
-    conn.commit()
-
-    cursor.close()
-    conn.close()
-
-    return redirect("/panel_estudiante")
-
-# =========================================
-# ELIMINAR MODULO
-# =========================================
-
-@app.route("/eliminar_modulo/<int:modulo_id>")
-def eliminar_modulo(modulo_id):
-
-    conn = get_connection()
-    cursor = conn.cursor()
-
-    cursor.execute("""
-        DELETE FROM contenidos
-        WHERE modulo_id=%s
-    """, (modulo_id,))
-
-    cursor.execute("""
-        DELETE FROM modulos
-        WHERE id=%s
-    """, (modulo_id,))
-
-    conn.commit()
-
-    cursor.close()
-    conn.close()
-
-    return redirect("/panel_docente")
-
-# =========================================
-# ELIMINAR CONTENIDO
-# =========================================
-
-@app.route("/eliminar_contenido/<int:contenido_id>")
-def eliminar_contenido(contenido_id):
-
-    conn = get_connection()
-    cursor = conn.cursor()
-
-    cursor.execute("""
-        DELETE FROM contenidos
-        WHERE id=%s
-    """, (contenido_id,))
-
-    conn.commit()
-
-    cursor.close()
-    conn.close()
-
-    return redirect("/panel_docente")
-
-# =========================================
-# UPLOADS
-# =========================================
-
-@app.route("/uploads/<filename>")
-def uploads(filename):
-
-    return send_from_directory(
-        app.config["UPLOAD_FOLDER"],
-        filename
-    )
-
-# =========================================
-# LOGOUT
-# =========================================
-
-@app.route("/logout")
-def logout():
-
-    session.clear()
-
-    return redirect("/login")
-
-# =========================================
-# RUN
-# =========================================
-
-        error = "Correo o contraseña incorrectos"
-
-    return render_template(
-        "docente_login.html",
-        error=error
-    )
-
-# =========================================
-# LOGIN ESTUDIANTE
-# =========================================
+return render_template(
+    "docente_login.html",
+    error=error
+)
+=========================================
+LOGIN ESTUDIANTE
+=========================================
 
 @app.route("/estudiante_login", methods=["GET", "POST"])
 def estudiante_login():
 
-    error = ""
+error = ""
 
-    if request.method == "POST":
+if request.method == "POST":
 
-        correo = request.form["correo"]
-        password = request.form["password"]
+    correo = request.form["correo"]
+    password = request.form["password"]
 
-        conn = get_connection()
-        cursor = conn.cursor()
+    conn = get_connection()
+    cursor = conn.cursor()
 
-        cursor.execute("""
-            SELECT id,nombre
-            FROM estudiantes
-            WHERE correo=%s
-            AND password=%s
-        """, (correo, password))
+    cursor.execute("""
+        SELECT id,nombre
+        FROM estudiantes
+        WHERE correo=%s
+        AND password=%s
+    """, (correo, password))
 
-        estudiante = cursor.fetchone()
+    estudiante = cursor.fetchone()
 
-        cursor.close()
-        conn.close()
+    cursor.close()
+    conn.close()
 
-        if estudiante:
+    if estudiante:
 
-            session["estudiante_id"] = estudiante[0]
+        session["estudiante_id"] = estudiante[0]
 
-            return redirect("/panel_estudiante")
+        return redirect("/panel_estudiante")
 
-        error = "Correo o contraseña incorrectos"
+    error = "Correo o contraseña incorrectos"
 
-    return render_template(
-        "estudiante_login.html",
-        error=error
-    )
-    # =========================================
-# PANEL DOCENTE
-# =========================================
+return render_template(
+    "estudiante_login.html",
+    error=error
+)
+=========================================
+PANEL ESTUDIANTE
+=========================================
+
+@app.route("/panel_estudiante")
+def panel_estudiante():
+
+if "estudiante_id" not in session:
+    return redirect("/estudiante_login")
+
+estudiante_id = session["estudiante_id"]
+
+conn = get_connection()
+cursor = conn.cursor()
+
+cursor.execute("""
+    SELECT id,nombre,documento,correo
+    FROM estudiantes
+    WHERE id=%s
+""", (estudiante_id,))
+
+e = cursor.fetchone()
+
+estudiante = {
+    "id": e[0],
+    "nombre": e[1],
+    "documento": e[2],
+    "correo": e[3]
+}
+
+cursor.execute("""
+    SELECT id,titulo,descripcion
+    FROM modulos
+    ORDER BY id DESC
+""")
+
+modulos = cursor.fetchall()
+
+cursor.close()
+conn.close()
+
+return render_template(
+    "panel_estudiante.html",
+    estudiante=estudiante,
+    modulos=modulos
+)
+=========================================
+PANEL DOCENTE
+=========================================
 
 @app.route("/panel_docente")
 def panel_docente():
 
-    if "docente_id" not in session:
-        return redirect("/docente_login")
+if "docente_id" not in session:
+    return redirect("/docente_login")
 
-    conn = get_connection()
-    cursor = conn.cursor()
+conn = get_connection()
+cursor = conn.cursor()
 
-    docente_id = session["docente_id"]
+docente_id = session["docente_id"]
 
-    # DOCENTE
-    cursor.execute("""
-        SELECT id,nombre,correo
-        FROM docentes
-        WHERE id=%s
-    """, (docente_id,))
+cursor.execute("""
+    SELECT id,nombre,correo
+    FROM docentes
+    WHERE id=%s
+""", (docente_id,))
 
-    d = cursor.fetchone()
+d = cursor.fetchone()
 
-    docente = {
-        "id": d[0],
-        "nombre": d[1],
-        "correo": d[2]
-    }
+docente = {
+    "id": d[0],
+    "nombre": d[1],
+    "correo": d[2]
+}
 
-    # MODULOS
-    cursor.execute("""
-        SELECT id,titulo,descripcion
-        FROM modulos
-        WHERE docente_id=%s
-        ORDER BY id DESC
-    """, (docente_id,))
+cursor.execute("""
+    SELECT id,titulo,descripcion
+    FROM modulos
+    WHERE docente_id=%s
+    ORDER BY id DESC
+""", (docente_id,))
 
-    modulos_raw = cursor.fetchall()
+modulos = cursor.fetchall()
 
-    modulos = []
+cursor.close()
+conn.close()
 
-    for m in modulos_raw:
+return render_template(
+    "panel_docente.html",
+    docente=docente,
+    modulos=modulos
+)
+=========================================
+CREAR MODULO
+=========================================
 
-        modulos.append({
-            "id": m[0],
-            "titulo": m[1],
-            "descripcion": m[2]
-        })
+@app.route("/crear_modulo", methods=["POST"])
+def crear_modulo():
 
-    # CONTENIDOS
-    cursor.execute("""
-        SELECT id,titulo,tipo,url,modulo_id
-        FROM contenidos
-        ORDER BY id DESC
-    """)
+if "docente_id" not in session:
+    return redirect("/docente_login")
 
-    contenidos_raw = cursor.fetchall()
+titulo = request.form["titulo"]
+descripcion = request.form["descripcion"]
 
-    contenidos = []
+conn = get_connection()
+cursor = conn.cursor()
 
-    for c in contenidos_raw:
-
-        contenidos.append({
-            "id": c[0],
-            "titulo": c[1],
-            "tipo": c[2],
-            "url": c[3],
-            "modulo_id": c[4]
-        })
-
-    # ESTUDIANTES + NOTAS
-    cursor.execute("""
-        SELECT
-            estudiantes.id,
-            estudiantes.nombre,
-            estudiantes.correo,
-            estudiantes.documento,
-            notas.materia,
-            notas.nota,
-            notas.observacion
-
-        FROM estudiantes
-
-        LEFT JOIN notas
-        ON estudiantes.id = notas.estudiante_id
-
-        ORDER BY estudiantes.id DESC
-    """)
-
-    estudiantes_raw = cursor.fetchall()
-
-    estudiantes = []
-
-    for e in estudiantes_raw:
-
-        estudiantes.append({
-            "id": e[0],
-            "nombre": e[1],
-            "correo": e[2],
-            "documento": e[3],
-            "materia": e[4],
-            "nota": e[5],
-            "observacion": e[6]
-        })
-
-    # ENTREGAS
-    cursor.execute("""
-        SELECT
-            entregas.id,
-            estudiantes.nombre,
-            modulos.titulo,
-            entregas.archivo,
-            entregas.fecha
-
-        FROM entregas
-
-        INNER JOIN estudiantes
-        ON entregas.estudiante_id = estudiantes.id
-
-        INNER JOIN modulos
-        ON entregas.modulo_id = modulos.id
-
-        ORDER BY entregas.id DESC
-    """)
-
-    entregas_raw = cursor.fetchall()
-
-    entregas = []
-
-    for x in entregas_raw:
-
-        entregas.append({
-            "id": x[0],
-            "estudiante": x[1],
-            "modulo": x[2],
-            "archivo": x[3],
-            "fecha": x[4]
-        })
-
-    cursor.close()
-    conn.close()
-
-    return render_template(
-        "panel_docente.html",
-        docente=docente,
-        modulos=modulos,
-        contenidos=contenidos,
-        estudiantes=estudiantes,
-        entregas=entregas
+cursor.execute("""
+    INSERT INTO modulos(
+        titulo,
+        descripcion,
+        docente_id
     )
+    VALUES(%s,%s,%s)
+""", (
+    titulo,
+    descripcion,
+    session["docente_id"]
+))
 
-# =========================================
-# GUARDAR NOTA
-# =========================================
+conn.commit()
 
-@app.route("/guardar_nota", methods=["POST"])
-def guardar_nota():
+cursor.close()
+conn.close()
 
-    estudiante_id = request.form["estudiante_id"]
-    materia = request.form["materia"]
-    nota = request.form["nota"]
-    observacion = request.form["observacion"]
+return redirect("/panel_docente")
+=========================================
+UPLOADS
+=========================================
 
-    conn = get_connection()
-    cursor = conn.cursor()
+@app.route("/uploads/")
+def uploads(filename):
 
-    cursor.execute("""
-        INSERT INTO notas(
-            estudiante_id,
-            materia,
-            nota,
-            observacion
-        )
-        VALUES(%s,%s,%s,%s)
-    """, (
-        estudiante_id,
-        materia,
-        nota,
-        observacion
-    ))
+return send_from_directory(
+    app.config["UPLOAD_FOLDER"],
+    filename
+)
+=========================================
+LOGOUT
+=========================================
 
-    conn.commit()
+@app.route("/logout")
+def logout():
 
-    cursor.close()
-    conn.close()
+session.clear()
 
-    return redirect("/panel_docente")
+return redirect("/login")
+=========================================
+RUN
+=========================================
 
-# =========================================
-# RUN
-# =========================================
-
-if __name__ == "__main__":
-    app.run(debug=True)
+if name == "main":
+app.run(debug=True)
