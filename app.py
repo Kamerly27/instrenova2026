@@ -346,3 +346,219 @@ def estudiante_login():
         "estudiante_login.html",
         error=error
     )
+    # =========================================
+# PANEL DOCENTE
+# =========================================
+
+@app.route("/panel_docente")
+def panel_docente():
+
+    if "docente_id" not in session:
+        return redirect("/docente_login")
+
+    conn = get_connection()
+    cursor = conn.cursor()
+
+    docente_id = session["docente_id"]
+
+    cursor.execute("""
+        SELECT id,nombre,correo
+        FROM docentes
+        WHERE id=%s
+    """, (docente_id,))
+
+    docente = cursor.fetchone()
+
+    cursor.execute("""
+        SELECT id,titulo,descripcion
+        FROM modulos
+        WHERE docente_id=%s
+        ORDER BY id DESC
+    """, (docente_id,))
+
+    modulos = cursor.fetchall()
+
+    cursor.execute("""
+        SELECT id,titulo,tipo,url,modulo_id
+        FROM contenidos
+        ORDER BY id DESC
+    """)
+
+    contenidos = cursor.fetchall()
+
+    cursor.execute("""
+        SELECT
+            estudiantes.id,
+            estudiantes.nombre,
+            estudiantes.correo,
+            estudiantes.documento,
+            notas.materia,
+            notas.nota,
+            notas.observacion
+
+        FROM estudiantes
+
+        LEFT JOIN notas
+        ON estudiantes.id = notas.estudiante_id
+
+        ORDER BY estudiantes.id DESC
+    """)
+
+    estudiantes = cursor.fetchall()
+
+    cursor.execute("""
+        SELECT
+            entregas.id,
+            estudiantes.nombre,
+            modulos.titulo,
+            entregas.archivo,
+            entregas.fecha
+
+        FROM entregas
+
+        INNER JOIN estudiantes
+        ON entregas.estudiante_id = estudiantes.id
+
+        INNER JOIN modulos
+        ON entregas.modulo_id = modulos.id
+
+        ORDER BY entregas.id DESC
+    """)
+
+    entregas = cursor.fetchall()
+
+    cursor.close()
+    conn.close()
+
+    return render_template(
+        "panel_docente.html",
+        docente=docente,
+        modulos=modulos,
+        contenidos=contenidos,
+        estudiantes=estudiantes,
+        entregas=entregas
+    )
+
+# =========================================
+# PANEL ESTUDIANTE
+# =========================================
+
+@app.route("/panel_estudiante")
+def panel_estudiante():
+
+    if "estudiante_id" not in session:
+        return redirect("/estudiante_login")
+
+    estudiante_id = session["estudiante_id"]
+
+    conn = get_connection()
+    cursor = conn.cursor()
+
+    cursor.execute("""
+        SELECT
+            id,
+            nombre,
+            documento,
+            correo
+        FROM estudiantes
+        WHERE id=%s
+    """, (estudiante_id,))
+
+    estudiante = cursor.fetchone()
+
+    cursor.execute("""
+        SELECT id,titulo,descripcion
+        FROM modulos
+        ORDER BY id DESC
+    """)
+
+    modulos = cursor.fetchall()
+
+    cursor.execute("""
+        SELECT id,titulo,tipo,url,modulo_id
+        FROM contenidos
+        ORDER BY id DESC
+    """)
+
+    contenidos = cursor.fetchall()
+
+    cursor.execute("""
+        SELECT materia,nota,observacion
+        FROM notas
+        WHERE estudiante_id=%s
+    """, (estudiante_id,))
+
+    notas = cursor.fetchall()
+
+    cursor.execute("""
+        SELECT
+            entregas.id,
+            modulos.titulo,
+            entregas.archivo,
+            entregas.fecha
+
+        FROM entregas
+
+        INNER JOIN modulos
+        ON entregas.modulo_id = modulos.id
+
+        WHERE entregas.estudiante_id=%s
+    """, (estudiante_id,))
+
+    entregas = cursor.fetchall()
+
+    cursor.close()
+    conn.close()
+
+    return render_template(
+        "panel_estudiante.html",
+        estudiante=estudiante,
+        modulos=modulos,
+        contenidos=contenidos,
+        notas=notas,
+        entregas=entregas
+    )
+
+# =========================================
+# GUARDAR NOTA
+# =========================================
+
+@app.route("/guardar_nota", methods=["POST"])
+def guardar_nota():
+
+    estudiante_id = request.form["estudiante_id"]
+    materia = request.form["materia"]
+    nota = request.form["nota"]
+    observacion = request.form["observacion"]
+
+    conn = get_connection()
+    cursor = conn.cursor()
+
+    cursor.execute("""
+        INSERT INTO notas(
+            estudiante_id,
+            materia,
+            nota,
+            observacion
+        )
+        VALUES(%s,%s,%s,%s)
+    """, (
+        estudiante_id,
+        materia,
+        nota,
+        observacion
+    ))
+
+    conn.commit()
+
+    cursor.close()
+    conn.close()
+
+    return redirect("/panel_docente")
+
+# =========================================
+# RUN
+# =========================================
+
+if __name__ == "__main__":
+    app.run(debug=True)
