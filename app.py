@@ -456,22 +456,41 @@ def panel_docente():
         })
 
     cursor.execute("""
-        SELECT id,nombre,correo,documento
-        FROM estudiantes
-    """)
+       cursor.execute("""
+    SELECT
+        estudiantes.id,
+        estudiantes.nombre,
+        estudiantes.correo,
+        estudiantes.documento,
+        notas.materia,
+        notas.nota,
+        notas.observacion
+
+    FROM estudiantes
+
+    LEFT JOIN notas
+    ON estudiantes.id = notas.estudiante_id
+
+    ORDER BY estudiantes.id DESC
+""")
 
     estudiantes_raw = cursor.fetchall()
 
     estudiantes = []
 
-    for e in estudiantes_raw:
+    estudiantes = []
 
-        estudiantes.append({
-            "id": e[0],
-            "nombre": e[1],
-            "correo": e[2],
-            "documento": e[3]
-        })
+for e in estudiantes_raw:
+
+    estudiantes.append({
+        "id": e[0],
+        "nombre": e[1],
+        "correo": e[2],
+        "documento": e[3],
+        "materia": e[4],
+        "nota": e[5],
+        "observacion": e[6]
+    })
 
     cursor.execute("""
         SELECT
