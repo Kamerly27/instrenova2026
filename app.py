@@ -737,6 +737,117 @@ def subir_actividad():
     return redirect("/panel_estudiante")
 
 # =========================================
+# CREAR CURSO
+# =========================================
+
+@app.route("/crear_curso", methods=["POST"])
+def crear_curso():
+
+    if "admin" not in session:
+        return redirect("/login")
+
+    nombre = request.form["nombre"]
+
+    conn = get_connection()
+    cursor = conn.cursor()
+
+    cursor.execute("""
+        INSERT INTO cursos(nombre)
+        VALUES(%s)
+    """, (nombre,))
+
+    conn.commit()
+
+    cursor.close()
+    conn.close()
+
+    return redirect("/admin")
+
+
+# =========================================
+# CREAR DOCENTE
+# =========================================
+
+@app.route("/crear_docente", methods=["POST"])
+def crear_docente():
+
+    if "admin" not in session:
+        return redirect("/login")
+
+    nombre = request.form["nombre"]
+    correo = request.form["correo"]
+    password = request.form["password"]
+    curso_id = request.form["curso_id"]
+
+    conn = get_connection()
+    cursor = conn.cursor()
+
+    cursor.execute("""
+        INSERT INTO docentes(
+            nombre,
+            correo,
+            password,
+            curso_id
+        )
+        VALUES(%s,%s,%s,%s)
+    """, (
+        nombre,
+        correo,
+        password,
+        curso_id
+    ))
+
+    conn.commit()
+
+    cursor.close()
+    conn.close()
+
+    return redirect("/admin")
+
+
+# =========================================
+# CREAR ESTUDIANTE
+# =========================================
+
+@app.route("/crear_estudiante", methods=["POST"])
+def crear_estudiante():
+
+    if "admin" not in session:
+        return redirect("/login")
+
+    nombre = request.form["nombre"]
+    documento = request.form["documento"]
+    correo = request.form["correo"]
+    password = request.form["password"]
+    curso_id = request.form["curso_id"]
+
+    conn = get_connection()
+    cursor = conn.cursor()
+
+    cursor.execute("""
+        INSERT INTO estudiantes(
+            nombre,
+            documento,
+            correo,
+            password,
+            curso_id
+        )
+        VALUES(%s,%s,%s,%s,%s)
+    """, (
+        nombre,
+        documento,
+        correo,
+        password,
+        curso_id
+    ))
+
+    conn.commit()
+
+    cursor.close()
+    conn.close()
+
+    return redirect("/admin")
+# =========================================
 # ELIMINAR ESTUDIANTE
 # =========================================
 
