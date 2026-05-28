@@ -12,10 +12,18 @@ app.config["UPLOAD_FOLDER"] = UPLOAD_FOLDER
 
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
+# =========================================
+# DATABASE
+# =========================================
+
 def get_connection():
     return psycopg2.connect(
         os.environ.get("DATABASE_URL")
     )
+
+# =========================================
+# INIT DB
+# =========================================
 
 def init_db():
 
@@ -95,6 +103,10 @@ def init_db():
 
 init_db()
 
+# =========================================
+# LOGIN ADMIN
+# =========================================
+
 @app.route("/login", methods=["GET", "POST"])
 def login():
 
@@ -117,6 +129,10 @@ def login():
         "login.html",
         error=error
     )
+
+# =========================================
+# ADMIN
+# =========================================
 
 @app.route("/admin")
 def admin():
@@ -146,6 +162,10 @@ def admin():
         estudiantes=estudiantes
     )
 
+# =========================================
+# CREAR CURSO
+# =========================================
+
 @app.route("/crear_curso", methods=["POST"])
 def crear_curso():
 
@@ -165,6 +185,10 @@ def crear_curso():
     conn.close()
 
     return redirect("/admin")
+
+# =========================================
+# CREAR DOCENTE
+# =========================================
 
 @app.route("/crear_docente", methods=["POST"])
 def crear_docente():
@@ -198,6 +222,10 @@ def crear_docente():
     conn.close()
 
     return redirect("/admin")
+
+# =========================================
+# CREAR ESTUDIANTE
+# =========================================
 
 @app.route("/crear_estudiante", methods=["POST"])
 def crear_estudiante():
@@ -234,6 +262,50 @@ def crear_estudiante():
     conn.close()
 
     return redirect("/admin")
+
+# =========================================
+# ELIMINAR
+# =========================================
+
+@app.route("/eliminar_docente/<int:id>")
+def eliminar_docente(id):
+
+    conn = get_connection()
+    cursor = conn.cursor()
+
+    cursor.execute("""
+        DELETE FROM docentes
+        WHERE id=%s
+    """, (id,))
+
+    conn.commit()
+
+    cursor.close()
+    conn.close()
+
+    return redirect("/admin")
+
+@app.route("/eliminar_estudiante/<int:id>")
+def eliminar_estudiante(id):
+
+    conn = get_connection()
+    cursor = conn.cursor()
+
+    cursor.execute("""
+        DELETE FROM estudiantes
+        WHERE id=%s
+    """, (id,))
+
+    conn.commit()
+
+    cursor.close()
+    conn.close()
+
+    return redirect("/admin")
+
+# =========================================
+# LOGIN DOCENTE
+# =========================================
 
 @app.route("/docente_login", methods=["GET", "POST"])
 def docente_login():
@@ -273,6 +345,10 @@ def docente_login():
         error=error
     )
 
+# =========================================
+# LOGIN ESTUDIANTE
+# =========================================
+
 @app.route("/estudiante_login", methods=["GET", "POST"])
 def estudiante_login():
 
@@ -311,13 +387,140 @@ def estudiante_login():
         error=error
     )
 
+# =========================================
+# PANEL DOCENTE
+# =========================================
+
 @app.route("/panel_docente")
 def panel_docente():
 
     if "docente_id" not in session:
         return redirect("/docente_login")
 
-    return render_template("panel_docente.html")
+    conn = get_connection()
+    cursor = conn.cursor()
+
+    docente_id = session["docente_id"]
+
+    cursor.execute("""
+        SELECT id,nombre,correo
+        FROM docentes
+        WHERE id=%s
+    """, (docente_id,))
+
+    d = cursor.fetchone()
+
+    docente = {
+        "id": d[0],
+        "nombre": d[1],
+        "correo": d[2]
+    }
+
+    cursor.execute("""
+        SELECT id,titulo,descripcion
+        FROM modulos
+        WHERE docente_id=%s
+        ORDER BY id DESC
+    """, (docente_id,))
+
+    modulos_raw = cursor.fetchall()
+
+    modulos = []
+
+    for m in modulos_raw:
+
+        modulos.append({
+            "id": m[0],
+            "titulo": m[1],
+            "descripcion": m[2]
+        })
+
+    cursor.execute("""
+        SELECT id,titulo,tipo,url,modulo_id
+        FROM contenidos
+        ORDER BY id DESC
+    """)
+
+    contenidos_raw = cursor.fetchall()
+
+    contenidos = []
+
+    for c in contenidos_raw:
+
+        contenidos.append({
+            "id": c[0],
+            "titulo": c[1],
+            "tipo": c[2],
+            "url": c[3],
+            "modulo_id": c[4]
+        })
+
+    cursor.execute("""
+        SELECT id,nombre,correo,documento
+        FROM estudiantes
+    """)
+
+    estudiantes_raw = cursor.fetchall()
+
+    estudiantes = []
+
+    for e in estudiantes_raw:
+
+        estudiantes.append({
+            "id": e[0],
+            "nombre": e[1],
+            "correo": e[2],
+            "documento": e[3]
+        })
+
+    cursor.execute("""
+        SELECT
+            entregas.id,
+            estudiantes.nombre,
+            modulos.titulo,
+            entregas.archivo,
+            entregas.fecha
+
+        FROM entregas
+
+        INNER JOIN estudiantes
+        ON entregas.estudiante_id = estudiantes.id
+
+        INNER JOIN modulos
+        ON entregas.modulo_id = modulos.id
+
+        ORDER BY entregas.id DESC
+    """)
+
+    entregas_raw = cursor.fetchall()
+
+    entregas = []
+
+    for x in entregas_raw:
+
+        entregas.append({
+            "id": x[0],
+            "estudiante": x[1],
+            "modulo": x[2],
+            "archivo": x[3],
+            "fecha": x[4]
+        })
+
+    cursor.close()
+    conn.close()
+
+    return render_template(
+        "panel_docente.html",
+        docente=docente,
+        modulos=modulos,
+        contenidos=contenidos,
+        estudiantes=estudiantes,
+        entregas=entregas
+    )
+
+# =========================================
+# PANEL ESTUDIANTE
+# =========================================
 
 @app.route("/panel_estudiante")
 def panel_estudiante():
@@ -325,7 +528,361 @@ def panel_estudiante():
     if "estudiante_id" not in session:
         return redirect("/estudiante_login")
 
-    return render_template("panel_estudiante.html")
+    estudiante_id = session["estudiante_id"]
+
+    conn = get_connection()
+    cursor = conn.cursor()
+
+    cursor.execute("""
+        SELECT
+            id,
+            nombre,
+            documento,
+            correo
+        FROM estudiantes
+        WHERE id=%s
+    """, (estudiante_id,))
+
+    e = cursor.fetchone()
+
+    estudiante = {
+        "id": e[0],
+        "nombre": e[1],
+        "documento": e[2],
+        "correo": e[3]
+    }
+
+    cursor.execute("""
+        SELECT id,titulo,descripcion
+        FROM modulos
+        ORDER BY id DESC
+    """)
+
+    modulos_raw = cursor.fetchall()
+
+    modulos = []
+
+    for m in modulos_raw:
+
+        modulos.append({
+            "id": m[0],
+            "titulo": m[1],
+            "descripcion": m[2]
+        })
+
+    cursor.execute("""
+        SELECT id,titulo,tipo,url,modulo_id
+        FROM contenidos
+        ORDER BY id DESC
+    """)
+
+    contenidos_raw = cursor.fetchall()
+
+    contenidos = []
+
+    for c in contenidos_raw:
+
+        contenidos.append({
+            "id": c[0],
+            "titulo": c[1],
+            "tipo": c[2],
+            "url": "/uploads/" + c[3],
+            "modulo_id": c[4]
+        })
+
+    cursor.execute("""
+        SELECT materia,nota,observacion
+        FROM notas
+        WHERE estudiante_id=%s
+    """, (estudiante_id,))
+
+    notas_raw = cursor.fetchall()
+
+    notas = []
+
+    for n in notas_raw:
+
+        notas.append({
+            "materia": n[0],
+            "nota": n[1],
+            "observacion": n[2]
+        })
+
+    cursor.execute("""
+        SELECT
+            entregas.id,
+            modulos.titulo,
+            entregas.archivo,
+            entregas.fecha
+
+        FROM entregas
+
+        INNER JOIN modulos
+        ON entregas.modulo_id = modulos.id
+
+        WHERE entregas.estudiante_id=%s
+    """, (estudiante_id,))
+
+    entregas_raw = cursor.fetchall()
+
+    entregas = []
+
+    for x in entregas_raw:
+
+        entregas.append({
+            "id": x[0],
+            "modulo_nombre": x[1],
+            "archivo": x[2],
+            "fecha": x[3]
+        })
+
+    cursor.close()
+    conn.close()
+
+    return render_template(
+        "panel_estudiante.html",
+        estudiante=estudiante,
+        modulos=modulos,
+        contenidos=contenidos,
+        notas=notas,
+        entregas=entregas
+    )
+
+# =========================================
+# CREAR MODULO
+# =========================================
+
+@app.route("/crear_modulo", methods=["POST"])
+def crear_modulo():
+
+    if "docente_id" not in session:
+        return redirect("/docente_login")
+
+    titulo = request.form["titulo"]
+    descripcion = request.form["descripcion"]
+
+    conn = get_connection()
+    cursor = conn.cursor()
+
+    cursor.execute("""
+        INSERT INTO modulos(
+            titulo,
+            descripcion,
+            docente_id
+        )
+        VALUES(%s,%s,%s)
+    """, (
+        titulo,
+        descripcion,
+        session["docente_id"]
+    ))
+
+    conn.commit()
+
+    cursor.close()
+    conn.close()
+
+    return redirect("/panel_docente")
+
+# =========================================
+# SUBIR ARCHIVO
+# =========================================
+
+@app.route("/subir_archivo/<int:modulo_id>", methods=["POST"])
+def subir_archivo(modulo_id):
+
+    titulo = request.form["titulo"]
+    tipo = request.form["tipo"]
+
+    archivo = request.files["archivo"]
+
+    nombre_archivo = secure_filename(
+        archivo.filename
+    )
+
+    archivo.save(
+        os.path.join(
+            app.config["UPLOAD_FOLDER"],
+            nombre_archivo
+        )
+    )
+
+    conn = get_connection()
+    cursor = conn.cursor()
+
+    cursor.execute("""
+        INSERT INTO contenidos(
+            titulo,
+            tipo,
+            url,
+            modulo_id
+        )
+        VALUES(%s,%s,%s,%s)
+    """, (
+        titulo,
+        tipo,
+        nombre_archivo,
+        modulo_id
+    ))
+
+    conn.commit()
+
+    cursor.close()
+    conn.close()
+
+    return redirect("/panel_docente")
+
+# =========================================
+# ELIMINAR MODULO
+# =========================================
+
+@app.route("/eliminar_modulo/<int:modulo_id>")
+def eliminar_modulo(modulo_id):
+
+    conn = get_connection()
+    cursor = conn.cursor()
+
+    cursor.execute("""
+        DELETE FROM contenidos
+        WHERE modulo_id=%s
+    """, (modulo_id,))
+
+    cursor.execute("""
+        DELETE FROM modulos
+        WHERE id=%s
+    """, (modulo_id,))
+
+    conn.commit()
+
+    cursor.close()
+    conn.close()
+
+    return redirect("/panel_docente")
+
+# =========================================
+# ELIMINAR CONTENIDO
+# =========================================
+
+@app.route("/eliminar_contenido/<int:contenido_id>")
+def eliminar_contenido(contenido_id):
+
+    conn = get_connection()
+    cursor = conn.cursor()
+
+    cursor.execute("""
+        DELETE FROM contenidos
+        WHERE id=%s
+    """, (contenido_id,))
+
+    conn.commit()
+
+    cursor.close()
+    conn.close()
+
+    return redirect("/panel_docente")
+
+# =========================================
+# GUARDAR NOTA
+# =========================================
+
+@app.route("/guardar_nota", methods=["POST"])
+def guardar_nota():
+
+    estudiante_id = request.form["estudiante_id"]
+    materia = request.form["materia"]
+    nota = request.form["nota"]
+    observacion = request.form["observacion"]
+
+    conn = get_connection()
+    cursor = conn.cursor()
+
+    cursor.execute("""
+        INSERT INTO notas(
+            estudiante_id,
+            materia,
+            nota,
+            observacion
+        )
+        VALUES(%s,%s,%s,%s)
+    """, (
+        estudiante_id,
+        materia,
+        nota,
+        observacion
+    ))
+
+    conn.commit()
+
+    cursor.close()
+    conn.close()
+
+    return redirect("/panel_docente")
+
+# =========================================
+# SUBIR ACTIVIDAD
+# =========================================
+
+@app.route("/subir_actividad", methods=["POST"])
+def subir_actividad():
+
+    if "estudiante_id" not in session:
+        return redirect("/estudiante_login")
+
+    modulo_id = request.form["modulo_id"]
+
+    archivo = request.files["archivo"]
+
+    nombre_archivo = secure_filename(
+        archivo.filename
+    )
+
+    archivo.save(
+        os.path.join(
+            app.config["UPLOAD_FOLDER"],
+            nombre_archivo
+        )
+    )
+
+    conn = get_connection()
+    cursor = conn.cursor()
+
+    cursor.execute("""
+        INSERT INTO entregas(
+            estudiante_id,
+            modulo_id,
+            archivo,
+            fecha
+        )
+        VALUES(%s,%s,%s,%s)
+    """, (
+        session["estudiante_id"],
+        modulo_id,
+        nombre_archivo,
+        datetime.now().strftime("%Y-%m-%d %H:%M")
+    ))
+
+    conn.commit()
+
+    cursor.close()
+    conn.close()
+
+    return redirect("/panel_estudiante")
+
+# =========================================
+# UPLOADS
+# =========================================
+
+@app.route("/uploads/<filename>")
+def uploads(filename):
+
+    return send_from_directory(
+        app.config["UPLOAD_FOLDER"],
+        filename
+    )
+
+# =========================================
+# LOGOUT
+# =========================================
 
 @app.route("/logout")
 def logout():
@@ -333,6 +890,10 @@ def logout():
     session.clear()
 
     return redirect("/login")
+
+# =========================================
+# RUN
+# =========================================
 
 if __name__ == "__main__":
     app.run(debug=True)
