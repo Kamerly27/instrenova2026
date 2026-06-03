@@ -1,11 +1,11 @@
 from flask import Flask, render_template, request, redirect, session, send_from_directory
 import psycopg2
 import os
+import cloudinary
+import cloudinary.uploader
+import cloudinary.api
 from werkzeug.utils import secure_filename
 from datetime import datetime
-
-app = Flask(__name__)
-app.secret_key = "renova2026"
 
 app = Flask(__name__)
 app.secret_key = "renova2026"
