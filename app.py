@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, redirect, session, send_from_directory
+from flask import Flask, render_template, request, redirect, session
 import psycopg2
 import os
 import cloudinary
@@ -16,13 +16,6 @@ cloudinary.config(
     api_secret=os.environ.get("CLOUDINARY_API_SECRET"),
     secure=True
 )
-
-UPLOAD_FOLDER = "static/uploads"
-app.config["UPLOAD_FOLDER"] = UPLOAD_FOLDER
-UPLOAD_FOLDER = "static/uploads"
-app.config["UPLOAD_FOLDER"] = UPLOAD_FOLDER
-
-os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
 # =========================================
 # DATABASE
@@ -598,7 +591,7 @@ def panel_estudiante():
             "id": c[0],
             "titulo": c[1],
             "tipo": c[2],
-            "url": "/uploads/" + c[3],
+            "url": c[3],
             "modulo_id": c[4]
         })
 
@@ -708,16 +701,9 @@ def subir_archivo(modulo_id):
 
     archivo = request.files["archivo"]
 
-    nombre_archivo = secure_filename(
-        archivo.filename
-    )
+    resultado = cloudinary.uploader.upload(archivo)
 
-    archivo.save(
-        os.path.join(
-            app.config["UPLOAD_FOLDER"],
-            nombre_archivo
-        )
-    )
+    archivo_url = resultado["secure_url"]
 
     conn = get_connection()
     cursor = conn.cursor()
@@ -733,7 +719,7 @@ def subir_archivo(modulo_id):
     """, (
         titulo,
         tipo,
-        nombre_archivo,
+        archivo_url,
         modulo_id
     ))
 
@@ -844,16 +830,9 @@ def subir_actividad():
 
     archivo = request.files["archivo"]
 
-    nombre_archivo = secure_filename(
-        archivo.filename
-    )
+    resultado = cloudinary.uploader.upload(archivo)
 
-    archivo.save(
-        os.path.join(
-            app.config["UPLOAD_FOLDER"],
-            nombre_archivo
-        )
-    )
+    archivo_url = resultado["secure_url"]
 
     conn = get_connection()
     cursor = conn.cursor()
@@ -869,7 +848,7 @@ def subir_actividad():
     """, (
         session["estudiante_id"],
         modulo_id,
-        nombre_archivo,
+        archivo_url,
         datetime.now().strftime("%Y-%m-%d %H:%M")
     ))
 
@@ -879,18 +858,6 @@ def subir_actividad():
     conn.close()
 
     return redirect("/panel_estudiante")
-
-# =========================================
-# UPLOADS
-# =========================================
-
-@app.route("/uploads/<filename>")
-def uploads(filename):
-
-    return send_from_directory(
-        app.config["UPLOAD_FOLDER"],
-        filename
-    )
 
 # =========================================
 # LOGOUT
